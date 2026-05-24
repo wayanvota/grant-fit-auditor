@@ -7,6 +7,7 @@ const loadDemo = document.querySelector("#loadDemo");
 const demoNote = document.querySelector("#demoNote");
 const submitButton = document.querySelector("#submitButton");
 const inlineProgress = document.querySelector("#inlineProgress");
+const inlineProgressTitle = document.querySelector("#inlineProgressTitle");
 const inlineProgressMessage = document.querySelector("#inlineProgressMessage");
 const inlineProgressElapsed = document.querySelector("#inlineProgressElapsed");
 const statusLine = document.querySelector("#statusLine");
@@ -20,6 +21,7 @@ const results = document.querySelector("#results");
 const defaultEmptyMessage = "Run an audit to see extracted requirements, eligibility pressure, inferred scoring, gaps, and a pursuit recommendation.";
 let progressTimer = null;
 let progressStartedAt = 0;
+let currentProgressMessages = [];
 
 const progressMessages = [
   {
@@ -75,11 +77,37 @@ function setEmptyState(message = defaultEmptyMessage) {
   emptyState.innerHTML = `<p>${escapeHtml(message)}</p>`;
 }
 
+function progressMessagesFor(provider) {
+  const label = providerLabel(provider);
+  return progressMessages.map((message) => {
+    if (message.at === 0) {
+      return {
+        ...message,
+        text: `${label} is reading the RFP and NGO profile.`
+      };
+    }
+    if (message.at === 55) {
+      return {
+        ...message,
+        text: `Waiting for ${label} to return structured JSON.`
+      };
+    }
+    if (message.at === 90) {
+      return {
+        ...message,
+        text: `${label} is still working. The demo RFA is long, and structured output can take time.`
+      };
+    }
+    return message;
+  });
+}
+
 function updateProgress() {
   const elapsedSeconds = Math.floor((Date.now() - progressStartedAt) / 1000);
-  const current = progressMessages.reduce((selected, message) => (
+  const messages = currentProgressMessages.length ? currentProgressMessages : progressMessages;
+  const current = messages.reduce((selected, message) => (
     elapsedSeconds >= message.at ? message : selected
-  ), progressMessages[0]);
+  ), messages[0]);
 
   progressElapsed.textContent = elapsedSeconds < 60
     ? `${elapsedSeconds}s`
@@ -93,11 +121,14 @@ function updateProgress() {
   });
 }
 
-function startProgress() {
+function startProgress(provider) {
+  const label = providerLabel(provider);
   clearInterval(progressTimer);
+  currentProgressMessages = progressMessagesFor(provider);
   progressStartedAt = Date.now();
   progressPanel.hidden = false;
   inlineProgress.hidden = false;
+  inlineProgressTitle.textContent = `${label} audit running:`;
   updateProgress();
   progressTimer = setInterval(updateProgress, 1000);
 }
@@ -210,11 +241,13 @@ async function submitAudit(event) {
   event.preventDefault();
   submitButton.disabled = true;
   submitButton.textContent = "Auditing fit";
-  providerBadge.textContent = providerLabel(selectedProvider());
-  statusLine.textContent = "Audit running. Keep this tab open.";
+  const provider = selectedProvider();
+  const label = providerLabel(provider);
+  providerBadge.textContent = label;
+  statusLine.textContent = `${label} audit running. Keep this tab open.`;
   emptyState.hidden = true;
   results.hidden = true;
-  startProgress();
+  startProgress(provider);
 
   const data = new FormData(form);
   if (!rfpPdf.files.length) {
