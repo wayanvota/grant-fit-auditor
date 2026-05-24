@@ -6,10 +6,53 @@ const ngoProfile = document.querySelector("#ngoProfile");
 const loadDemo = document.querySelector("#loadDemo");
 const demoNote = document.querySelector("#demoNote");
 const submitButton = document.querySelector("#submitButton");
+const inlineProgress = document.querySelector("#inlineProgress");
+const inlineProgressMessage = document.querySelector("#inlineProgressMessage");
+const inlineProgressElapsed = document.querySelector("#inlineProgressElapsed");
 const statusLine = document.querySelector("#statusLine");
 const providerBadge = document.querySelector("#providerBadge");
 const emptyState = document.querySelector("#emptyState");
+const progressPanel = document.querySelector("#progressPanel");
+const progressMessage = document.querySelector("#progressMessage");
+const progressElapsed = document.querySelector("#progressElapsed");
+const progressSteps = Array.from(document.querySelectorAll("#progressSteps li"));
 const results = document.querySelector("#results");
+const defaultEmptyMessage = "Run an audit to see extracted requirements, eligibility pressure, inferred scoring, gaps, and a pursuit recommendation.";
+let progressTimer = null;
+let progressStartedAt = 0;
+
+const progressMessages = [
+  {
+    at: 0,
+    step: 0,
+    text: "Reading the RFP and NGO profile."
+  },
+  {
+    at: 8,
+    step: 1,
+    text: "Extracting mandatory requirements and citations."
+  },
+  {
+    at: 20,
+    step: 2,
+    text: "Checking eligibility and inferring scoring pressure."
+  },
+  {
+    at: 35,
+    step: 3,
+    text: "Ranking gaps by likely scoring impact."
+  },
+  {
+    at: 55,
+    step: 4,
+    text: "Waiting for the AI provider to return structured JSON."
+  },
+  {
+    at: 90,
+    step: 4,
+    text: "Still working. The demo RFA is long, and structured output can take time."
+  }
+];
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -28,6 +71,44 @@ function providerLabel(value) {
   return value === "openai" ? "ChatGPT" : "Claude";
 }
 
+function setEmptyState(message = defaultEmptyMessage) {
+  emptyState.innerHTML = `<p>${escapeHtml(message)}</p>`;
+}
+
+function updateProgress() {
+  const elapsedSeconds = Math.floor((Date.now() - progressStartedAt) / 1000);
+  const current = progressMessages.reduce((selected, message) => (
+    elapsedSeconds >= message.at ? message : selected
+  ), progressMessages[0]);
+
+  progressElapsed.textContent = elapsedSeconds < 60
+    ? `${elapsedSeconds}s`
+    : `${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s`;
+  progressMessage.textContent = current.text;
+  inlineProgressElapsed.textContent = progressElapsed.textContent;
+  inlineProgressMessage.textContent = current.text;
+  progressSteps.forEach((step, index) => {
+    step.classList.toggle("done", index < current.step);
+    step.classList.toggle("active", index === current.step);
+  });
+}
+
+function startProgress() {
+  clearInterval(progressTimer);
+  progressStartedAt = Date.now();
+  progressPanel.hidden = false;
+  inlineProgress.hidden = false;
+  updateProgress();
+  progressTimer = setInterval(updateProgress, 1000);
+}
+
+function stopProgress() {
+  clearInterval(progressTimer);
+  progressTimer = null;
+  progressPanel.hidden = true;
+  inlineProgress.hidden = true;
+}
+
 function loadDemoScenario() {
   rfpText.value = window.GRANT_FIT_DEMO.rfpText;
   ngoProfile.value = window.GRANT_FIT_DEMO.ngoProfile;
@@ -35,6 +116,7 @@ function loadDemoScenario() {
   rfpPdf.value = "";
   demoNote.hidden = false;
   statusLine.textContent = "SheConnects demo loaded. You can edit before running the audit.";
+  setEmptyState();
 }
 
 function statusClass(status) {
@@ -58,6 +140,7 @@ function renderResults(payload) {
   const recommendation = result.pursuit_recommendation;
   const provider = providerLabel(payload.provider);
 
+  stopProgress();
   providerBadge.textContent = provider;
   statusLine.textContent = `${provider} audit complete. Source: ${payload.source?.label || "provided text"}.`;
   emptyState.hidden = true;
@@ -128,7 +211,10 @@ async function submitAudit(event) {
   submitButton.disabled = true;
   submitButton.textContent = "Auditing fit";
   providerBadge.textContent = providerLabel(selectedProvider());
-  statusLine.textContent = "Extracting requirements and checking fit.";
+  statusLine.textContent = "Audit running. Keep this tab open.";
+  emptyState.hidden = true;
+  results.hidden = true;
+  startProgress();
 
   const data = new FormData(form);
   if (!rfpPdf.files.length) {
@@ -146,6 +232,8 @@ async function submitAudit(event) {
     }
     renderResults(payload);
   } catch (error) {
+    stopProgress();
+    setEmptyState(error.message);
     emptyState.hidden = false;
     results.hidden = true;
     statusLine.textContent = error.message;

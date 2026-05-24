@@ -75,6 +75,11 @@
           </label>
 
           <button type="submit" class="primary-button" id="submitButton">Run fit audit</button>
+          <p id="inlineProgress" class="inline-progress" hidden>
+            <strong>Audit running:</strong>
+            <span id="inlineProgressMessage">Preparing audit.</span>
+            <span id="inlineProgressElapsed">0s</span>
+          </p>
           <p class="fine-print">The API key stays on the server. No database is used in version 1.</p>
         </form>
 
@@ -89,6 +94,25 @@
 
           <div id="emptyState" class="empty-state">
             <p>Run an audit to see extracted requirements, eligibility pressure, inferred scoring, gaps, and a pursuit recommendation.</p>
+          </div>
+
+          <div id="progressPanel" class="progress-panel" hidden>
+            <div class="progress-topline">
+              <div>
+                <div class="panel-label">Audit in progress</div>
+                <p id="progressMessage">Preparing audit.</p>
+              </div>
+              <span id="progressElapsed">0s</span>
+            </div>
+            <div class="progress-bar" aria-hidden="true"><span></span></div>
+            <ol id="progressSteps" class="progress-steps">
+              <li>Reading RFP and NGO profile</li>
+              <li>Extracting mandatory requirements</li>
+              <li>Checking eligibility and scoring pressure</li>
+              <li>Ranking gaps</li>
+              <li>Waiting for provider response</li>
+            </ol>
+            <p class="progress-note">Long RFPs can take 60 to 120 seconds. Keep this tab open.</p>
           </div>
 
           <div id="results" class="results" hidden></div>
