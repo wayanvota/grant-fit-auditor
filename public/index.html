@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grant Fit Auditor</title>
+    <meta name="description" content="Use AI to apply to fewer grants, not more.">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div class="hero-inner">
+          <div>
+            <nav class="top-nav" aria-label="Tool navigation">
+              <a href="/">Auditor</a>
+              <a href="/about.html">About</a>
+              <a href="https://wayan.com/" rel="noreferrer">Wayan.com</a>
+            </nav>
+            <h1>Grant Fit Auditor</h1>
+            <p class="lede">Use AI to apply to fewer grants, not more.</p>
+            <p class="sublede">Built to refuse, not to apply faster.</p>
+          </div>
+          <div class="argument-panel">
+            <div class="panel-label">Editorial argument</div>
+            <p>The grant-writing industry sells volume. This tool makes the opposite case: let people set strategy, then use AI to extract requirements, infer scoring pressure, and expose gaps before a team wastes weeks on a weak fit.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <form id="auditForm" class="input-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Scenario inputs</h2>
+              <p>Paste guidelines, add a URL, or upload a text-based PDF.</p>
+            </div>
+            <button type="button" id="loadDemo" class="secondary-button">Load demo</button>
+          </div>
+
+          <div id="demoNote" class="demo-note" hidden>
+            Note: SheConnects scans submitted proposals for AI text percentage. This tool helps you understand the RFP and audit your fit. The proposal narrative itself stays human-written.
+          </div>
+
+          <fieldset class="provider-fieldset">
+            <legend>AI engine</legend>
+            <label>
+              <input type="radio" name="provider" value="anthropic" checked>
+              <span>Claude</span>
+            </label>
+            <label>
+              <input type="radio" name="provider" value="openai">
+              <span>ChatGPT</span>
+            </label>
+          </fieldset>
+
+          <label class="field">
+            <span>RFP or grant guidelines text</span>
+            <textarea id="rfpText" name="rfpText" rows="12" placeholder="Paste RFP text here."></textarea>
+          </label>
+
+          <label class="field">
+            <span>RFP URL</span>
+            <input id="rfpUrl" name="rfpUrl" type="url" placeholder="https://example.org/grant-guidelines">
+          </label>
+
+          <label class="field">
+            <span>Upload PDF</span>
+            <input id="rfpPdf" name="rfpPdf" type="file" accept="application/pdf">
+          </label>
+
+          <label class="field">
+            <span>NGO profile</span>
+            <textarea id="ngoProfile" name="ngoProfile" rows="12" placeholder="Mission, programs, budget size, geography, outcomes, and known gaps."></textarea>
+          </label>
+
+          <button type="submit" class="primary-button" id="submitButton">Run fit audit</button>
+          <p class="fine-print">The API key stays on the server. No database is used in version 1.</p>
+        </form>
+
+        <section class="output-panel" aria-live="polite">
+          <div class="panel-heading">
+            <div>
+              <h2>Audit output</h2>
+              <p id="statusLine">Load the demo or add your own RFP and profile.</p>
+            </div>
+            <span id="providerBadge" class="provider-badge">Ready</span>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <p>Run an audit to see extracted requirements, eligibility pressure, inferred scoring, gaps, and a pursuit recommendation.</p>
+          </div>
+
+          <div id="results" class="results" hidden></div>
+
+          <aside class="human-panel">
+            <div class="panel-label">What AI WON'T do here</div>
+            <ul>
+              <li>
+                <strong>Define what your organization will pursue or refuse.</strong>
+                <span>That is a leadership choice about mission discipline and opportunity cost.</span>
+              </li>
+              <li>
+                <strong>Surface missing requirements not stated in the RFP.</strong>
+                <span>Unwritten funder expectations require human judgment and relationship knowledge.</span>
+              </li>
+              <li>
+                <strong>Audit your own evidence file for accuracy.</strong>
+                <span>The tool can compare text. It cannot certify whether your internal evidence is true.</span>
+              </li>
+            </ul>
+          </aside>
+        </section>
+      </section>
+    </main>
+    <script src="/demo.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

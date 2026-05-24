@@ -1,0 +1,24 @@
+{
+  "name": "grant-fit-auditor",
+  "version": "1.0.0",
+  "description": "Grant Fit Auditor: use AI to apply to fewer grants, not more.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "ajv": "^8.17.1",
+    "cheerio": "^1.0.0",
+    "express": "^4.19.2",
+    "multer": "^2.0.2",
+    "openai": "^5.12.2",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {}
+}
