@@ -598,6 +598,12 @@ input:focus {
   line-height: 1.65;
 }
 
+.author-section {
+  margin-top: 26px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
 .primary-link {
   display: inline-flex;
   border-radius: 6px;

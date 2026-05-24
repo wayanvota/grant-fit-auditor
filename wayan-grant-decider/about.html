@@ -71,14 +71,27 @@
         font-weight: 800;
         text-decoration: none;
       }
+      .author-section {
+        margin-top: 28px;
+        border-top: 1px solid var(--line);
+        padding-top: 22px;
+      }
+      .step {
+        display: inline-flex;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
     </style>
   </head>
   <body>
     <main>
       <nav>
-        <a href="/grant-decider/">Grant Fit Auditor</a>
-        <a href="/grant-decider/about.html">About</a>
-        <a href="https://wayan.com/">Wayan.com</a>
+        <a href="https://wayan.com/grant-decider/index.html">Home</a>
+        <a href="https://grant-fit-auditor.onrender.com/">Auditor</a>
+        <a href="https://wayan.com/grant-decider/about.html">About</a>
       </nav>
       <article>
         <h1>About Grant Fit Auditor</h1>
@@ -86,12 +99,18 @@
         <p>The tool extracts requirements, checks eligibility, infers scoring pressure, identifies gaps, and recommends whether the organization should pursue, refuse, or pursue with work.</p>
         <h2>The boundary</h2>
         <p>Humans set strategy. AI audits the text it is given. The tool refuses to define what an organization should pursue, invent unstated funder expectations, or certify whether internal evidence is accurate.</p>
-        <p><a class="button" id="demoLink" href="https://grant-fit-auditor.onrender.com/?demo=1">Open the SheConnects demo</a></p>
+        <section class="author-section" id="author">
+          <span class="step">Author</span>
+          <h2>Developed by Wayan Vota</h2>
+          <p>This site was built by Wayan Vota as a working argument for NGO leaders weighing grant opportunities. He created the concept, sample scenario, and editorial framing, then used OpenAI Codex to build the application.</p>
+          <p>The design choice behind the site is simple: expose requirements, surface fit gaps, and help teams make an earlier pursuit decision before proposal momentum takes over.</p>
+        </section>
+        <p><a class="button" id="appLink" href="https://grant-fit-auditor.onrender.com/">Open the auditor</a></p>
       </article>
     </main>
     <script>
-      const APP_URL = "https://grant-fit-auditor.onrender.com/?demo=1";
-      document.getElementById("demoLink").href = APP_URL;
+      const APP_URL = "https://grant-fit-auditor.onrender.com/";
+      document.getElementById("appLink").href = APP_URL;
     </script>
   </body>
 </html>
