@@ -28,7 +28,7 @@ Set these in Render:
 ```bash
 ANTHROPIC_API_KEY=...
 OPENAI_API_KEY=...
-ANTHROPIC_MODEL=claude-haiku-4-5
+ANTHROPIC_MODEL=claude-haiku-4-5-20251001
 OPENAI_MODEL=gpt-5-mini
 ```
 

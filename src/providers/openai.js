@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { auditSchema } from "../auditSchema.js";
 import { buildUserPrompt, systemPrompt } from "../auditPrompt.js";
+import { publicProviderError } from "../providerErrors.js";
 
 export async function runOpenAiAudit({ rfpText, ngoProfile }) {
   if (!process.env.OPENAI_API_KEY) {
@@ -13,28 +14,33 @@ export async function runOpenAiAudit({ rfpText, ngoProfile }) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const model = process.env.OPENAI_MODEL || "gpt-5-mini";
 
-  const response = await openai.responses.create({
-    model,
-    prompt_cache_key: "grant-fit-auditor-v1",
-    input: [
-      {
-        role: "system",
-        content: systemPrompt
-      },
-      {
-        role: "user",
-        content: buildUserPrompt({ rfpText, ngoProfile })
+  let response;
+  try {
+    response = await openai.responses.create({
+      model,
+      prompt_cache_key: "grant-fit-auditor-v1",
+      input: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: buildUserPrompt({ rfpText, ngoProfile })
+        }
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "grant_fit_audit",
+          strict: true,
+          schema: auditSchema
+        }
       }
-    ],
-    text: {
-      format: {
-        type: "json_schema",
-        name: "grant_fit_audit",
-        strict: true,
-        schema: auditSchema
-      }
-    }
-  });
+    });
+  } catch (error) {
+    throw publicProviderError("ChatGPT", error);
+  }
 
   const raw = response.output_text;
   let result;
