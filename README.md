@@ -90,6 +90,8 @@ The folder `wayan-grant-decider/` contains `index.html` and `about.html` for `wa
 
 Those pages are static landing pages that point readers to the Render-hosted tool. Update the `APP_URL` constant inside those files if the final Render URL changes.
 
+The folder `wayan-grant-fit/` contains `index.html` and `about.html` for `wayan.com/grant-fit`.
+
 ## Verification
 
 See [VERIFICATION.md](./VERIFICATION.md).
