@@ -4,34 +4,59 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Grant Fit Auditor</title>
-    <meta name="description" content="Use AI to apply to fewer grants, not more.">
+    <meta name="description" content="Apply to fewer grants. Review the right ones.">
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
     <main class="app-shell">
+      <header class="site-header">
+        <nav class="top-nav" aria-label="Tool navigation">
+          <a href="https://wayan.com/grant-decider/index.html" rel="noreferrer">Home</a>
+          <a class="active" href="https://grant-fit-auditor.onrender.com/" aria-current="page">Auditor</a>
+          <a href="https://wayan.com/grant-decider/about.html" rel="noreferrer">About</a>
+          <span class="privacy-note">AI never sees private account data</span>
+        </nav>
+      </header>
+
       <section class="hero">
-        <div class="hero-inner">
+        <div class="hero-copy">
           <div>
-            <nav class="top-nav" aria-label="Tool navigation">
-              <a href="https://wayan.com/grant-decider/index.html" rel="noreferrer">Home</a>
-              <a href="https://grant-fit-auditor.onrender.com/">Auditor</a>
-              <a href="https://wayan.com/grant-decider/about.html" rel="noreferrer">About</a>
-            </nav>
+            <p class="eyebrow">Grant discipline, from both sides</p>
             <h1>Grant Fit Auditor</h1>
-            <p class="lede">Use AI to apply to fewer grants, not more.</p>
-            <p class="sublede">Built to refuse, not to apply faster.</p>
+            <p class="lede">Apply to fewer grants. Review the right ones.</p>
           </div>
-          <div class="argument-panel">
-            <div class="panel-label">Editorial argument</div>
-            <p>The grant-writing industry sells volume. This tool makes the opposite case: let people set strategy, then use AI to extract requirements, infer scoring pressure, and expose gaps before a team wastes weeks on a weak fit.</p>
+
+          <div class="mode-control-wrap">
+            <span class="panel-label">Mode</span>
+            <div class="mode-control" role="group" aria-label="Choose how you are using the auditor">
+              <button type="button" class="mode-button active" data-mode="applicant" aria-pressed="true">I am applying</button>
+              <button type="button" class="mode-button" data-mode="reviewer" aria-pressed="false">I am reviewing</button>
+            </div>
           </div>
+
+          <aside id="heroArgument" class="argument-panel">
+            <p class="panel-label">Editorial argument</p>
+            <h2>Built to refuse, not to apply faster.</h2>
+            <p>Let people set strategy, then use AI to expose requirements and gaps before a team wastes weeks on a weak fit.</p>
+          </aside>
+
+          <aside id="reviewerBoundary" class="reviewer-boundary" hidden>
+            <p class="panel-label">What this tool will not do</p>
+            <ul>
+              <li><strong>It will not score or rank your applicants.</strong> It gives no number and no order of merit.</li>
+              <li><strong>It will not decide or recommend who to fund.</strong> A reviewer confirms every routing state.</li>
+              <li><strong>It will not apply criteria you did not publish.</strong> It reads only the criteria you provide.</li>
+              <li><strong>It will not tell you whether claims are true.</strong> Verification remains human work.</li>
+            </ul>
+          </aside>
         </div>
       </section>
 
-      <section class="workspace">
+      <section id="applicantWorkspace" class="workspace">
         <form id="auditForm" class="input-panel">
           <div class="panel-heading">
             <div>
+              <p class="panel-label">Applicant-side audit</p>
               <h2>Scenario inputs</h2>
               <p>Paste guidelines, add a URL, or upload a text-based PDF.</p>
             </div>
@@ -39,7 +64,7 @@
           </div>
 
           <div id="demoNote" class="demo-note" hidden>
-            Note: SheConnects scans submitted proposals for AI text percentage. This tool helps you understand the RFP and audit your fit. The proposal narrative itself stays human-written.
+            The fictional SheConnects scenario is loaded. The proposal narrative stays human-written.
           </div>
 
           <fieldset class="provider-fieldset">
@@ -56,7 +81,7 @@
 
           <label class="field">
             <span>RFP or grant guidelines text</span>
-            <textarea id="rfpText" name="rfpText" rows="12" placeholder="Paste RFP text here."></textarea>
+            <textarea id="rfpText" name="rfpText" rows="10" placeholder="Paste RFP text here."></textarea>
           </label>
 
           <label class="field">
@@ -71,7 +96,7 @@
 
           <label class="field">
             <span>NGO profile</span>
-            <textarea id="ngoProfile" name="ngoProfile" rows="12" placeholder="Mission, programs, budget size, geography, outcomes, and known gaps."></textarea>
+            <textarea id="ngoProfile" name="ngoProfile" rows="10" placeholder="Mission, programs, budget size, geography, outcomes, and known gaps."></textarea>
           </label>
 
           <button type="submit" class="primary-button" id="submitButton">Run fit audit</button>
@@ -80,12 +105,13 @@
             <span id="inlineProgressMessage">Preparing audit.</span>
             <span id="inlineProgressElapsed">0s</span>
           </p>
-          <p class="fine-print">The API key stays on the server. No database is used in version 1.</p>
+          <p class="fine-print">Your inputs are processed for this run only. No database is used.</p>
         </form>
 
         <section class="output-panel" aria-live="polite">
           <div class="panel-heading">
             <div>
+              <p class="panel-label">Decision brief</p>
               <h2>Audit output</h2>
               <p id="statusLine">Load the demo or add your own RFP and profile.</p>
             </div>
@@ -99,7 +125,7 @@
           <div id="progressPanel" class="progress-panel" hidden>
             <div class="progress-topline">
               <div>
-                <div class="panel-label">Audit in progress</div>
+                <p class="panel-label">Audit in progress</p>
                 <p id="progressMessage">Preparing audit.</p>
               </div>
               <span id="progressElapsed">0s</span>
@@ -118,7 +144,7 @@
           <div id="results" class="results" hidden></div>
 
           <aside class="human-panel">
-            <div class="panel-label">What AI WON'T do here</div>
+            <p class="panel-label">What AI won't do here</p>
             <ul>
               <li>
                 <strong>Define what your organization will pursue or refuse.</strong>
@@ -129,11 +155,107 @@
                 <span>Unwritten funder expectations require human judgment and relationship knowledge.</span>
               </li>
               <li>
-                <strong>Audit your own evidence file for accuracy.</strong>
-                <span>The tool can compare text. It cannot certify whether your internal evidence is true.</span>
+                <strong>Audit your evidence file for accuracy.</strong>
+                <span>The tool can compare text. It cannot certify whether your evidence is true.</span>
               </li>
             </ul>
           </aside>
+        </section>
+      </section>
+
+      <section id="reviewerWorkspace" class="workspace reviewer-workspace" hidden>
+        <form id="reviewerForm" class="input-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-label">Reviewer-side triage</p>
+              <h2>Published criteria and applicants</h2>
+              <p>Use one call and up to six fictional or consented applicant profiles.</p>
+            </div>
+            <button type="button" id="loadReviewerDemo" class="secondary-button">Load demo</button>
+          </div>
+
+          <fieldset class="provider-fieldset">
+            <legend>AI engine</legend>
+            <label>
+              <input type="radio" name="provider" value="anthropic" checked>
+              <span>Claude</span>
+            </label>
+            <label>
+              <input type="radio" name="provider" value="openai">
+              <span>ChatGPT</span>
+            </label>
+          </fieldset>
+
+          <fieldset class="source-fieldset">
+            <legend>Published criteria source</legend>
+            <div class="source-tabs" role="group" aria-label="Criteria source type">
+              <button type="button" class="source-tab active" data-source="text" aria-pressed="true">Text</button>
+              <button type="button" class="source-tab" data-source="url" aria-pressed="false">URL</button>
+              <button type="button" class="source-tab" data-source="pdf" aria-pressed="false">PDF</button>
+            </div>
+
+            <label id="criteriaTextField" class="field">
+              <span>Published call or guidelines</span>
+              <textarea id="criteriaText" name="criteriaText" rows="7" placeholder="Paste the funder's published eligibility and scope criteria."></textarea>
+            </label>
+
+            <label id="criteriaUrlField" class="field" hidden>
+              <span>Criteria URL</span>
+              <input id="criteriaUrl" name="criteriaUrl" type="url" placeholder="https://example.org/open-call">
+            </label>
+
+            <label id="criteriaPdfField" class="field" hidden>
+              <span>Criteria PDF</span>
+              <input id="criteriaPdf" name="criteriaPdf" type="file" accept="application/pdf">
+            </label>
+          </fieldset>
+
+          <label class="field">
+            <span>Applicant set</span>
+            <textarea id="applicantSet" name="applicantSet" rows="8" placeholder="Applicant name&#10;Mission, geography, programs, scale, evidence, and gaps.&#10;&#10;---&#10;&#10;Next applicant name&#10;Profile details..."></textarea>
+          </label>
+          <p class="batch-guidance">Separate applicants with a line containing <code>---</code>. Each applicant is processed independently. A six-applicant run can take several minutes and uses one provider call per applicant, plus one criteria extraction call.</p>
+
+          <button type="submit" class="primary-button accent-button" id="reviewerSubmitButton">Run reviewer triage</button>
+          <p id="reviewerInlineProgress" class="inline-progress" hidden>
+            <strong>Reviewer triage running:</strong>
+            <span id="reviewerInlineMessage">Preparing criteria.</span>
+            <span id="reviewerInlineElapsed">0s</span>
+          </p>
+          <p class="fine-print">Criteria, applicants, and results stay in this browser session. Nothing is stored by the app.</p>
+        </form>
+
+        <section class="output-panel reviewer-output" aria-live="polite">
+          <div class="panel-heading worklist-heading">
+            <div>
+              <p class="panel-label">Reviewer worklist</p>
+              <h2>Triage order, not a ranking</h2>
+              <p id="reviewerStatusLine">Load the fictional demo or enter a call and applicant set.</p>
+            </div>
+            <div class="output-actions">
+              <span id="reviewerProviderBadge" class="provider-badge">Ready</span>
+              <button type="button" id="exportCsv" class="secondary-button" hidden>Export CSV</button>
+              <button type="button" id="exportPdf" class="secondary-button" hidden>Export PDF</button>
+            </div>
+          </div>
+
+          <div id="reviewerEmptyState" class="empty-state">
+            <p>The worklist will surface cases needing human attention first, followed by clean routes to full review.</p>
+          </div>
+
+          <div id="reviewerProgressPanel" class="progress-panel" hidden>
+            <div class="progress-topline">
+              <div>
+                <p class="panel-label">Batch in progress</p>
+                <p id="reviewerProgressMessage">Extracting the published criteria once.</p>
+              </div>
+              <span id="reviewerProgressElapsed">0s</span>
+            </div>
+            <div class="progress-bar accent-progress" aria-hidden="true"><span></span></div>
+            <p class="progress-note">One applicant failure will not stop the rest of the batch.</p>
+          </div>
+
+          <div id="reviewerResults" class="reviewer-results" hidden></div>
         </section>
       </section>
     </main>

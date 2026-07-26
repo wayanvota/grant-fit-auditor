@@ -1,9 +1,55 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { auditSchema } from "../auditSchema.js";
+import {
+  auditSchema,
+  funderApplicantSchema,
+  funderCriteriaSchema
+} from "../auditSchema.js";
 import { buildUserPrompt, systemPrompt } from "../auditPrompt.js";
+import {
+  buildFunderApplicantPrompt,
+  buildFunderCriteriaPrompt,
+  funderApplicantSystemPrompt,
+  funderCriteriaSystemPrompt
+} from "../funderPrompt.js";
 import { publicProviderError } from "../providerErrors.js";
 
 export async function runAnthropicAudit({ rfpText, ngoProfile }) {
+  return runAnthropicStructured({
+    system: systemPrompt,
+    prompt: buildUserPrompt({ rfpText, ngoProfile }),
+    schema: auditSchema,
+    toolName: "submit_grant_fit_audit",
+    toolDescription: "Return the structured grant fit audit."
+  });
+}
+
+export async function runAnthropicFunderCriteria({ criteriaText }) {
+  return runAnthropicStructured({
+    system: funderCriteriaSystemPrompt,
+    prompt: buildFunderCriteriaPrompt(criteriaText),
+    schema: funderCriteriaSchema,
+    toolName: "submit_funder_criteria",
+    toolDescription: "Return the criteria extracted from the funder's published text."
+  });
+}
+
+export async function runAnthropicFunderApplicant(input) {
+  return runAnthropicStructured({
+    system: funderApplicantSystemPrompt,
+    prompt: buildFunderApplicantPrompt(input),
+    schema: funderApplicantSchema,
+    toolName: "submit_applicant_triage",
+    toolDescription: "Return the cited review-routing result for one applicant."
+  });
+}
+
+async function runAnthropicStructured({
+  system,
+  prompt,
+  schema,
+  toolName,
+  toolDescription
+}) {
   if (!process.env.ANTHROPIC_API_KEY) {
     const error = new Error("ANTHROPIC_API_KEY is not configured");
     error.publicMessage = "Claude is not configured on this server.";
@@ -23,23 +69,23 @@ export async function runAnthropicAudit({ rfpText, ngoProfile }) {
       system: [
         {
           type: "text",
-          text: systemPrompt,
+          text: system,
           cache_control: { type: "ephemeral", ttl: "5m" }
         }
       ],
       tools: [
         {
-          name: "submit_grant_fit_audit",
-          description: "Return the structured grant fit audit.",
-          input_schema: auditSchema,
+          name: toolName,
+          description: toolDescription,
+          input_schema: schema,
           cache_control: { type: "ephemeral", ttl: "5m" }
         }
       ],
-      tool_choice: { type: "tool", name: "submit_grant_fit_audit" },
+      tool_choice: { type: "tool", name: toolName },
       messages: [
         {
           role: "user",
-          content: buildUserPrompt({ rfpText, ngoProfile })
+          content: prompt
         }
       ]
     });
@@ -49,8 +95,8 @@ export async function runAnthropicAudit({ rfpText, ngoProfile }) {
 
   const toolUse = response.content.find((item) => item.type === "tool_use");
   if (!toolUse?.input) {
-    const error = new Error("Claude did not return the audit tool payload");
-    error.publicMessage = "Claude did not return structured audit data.";
+    const error = new Error(`Claude did not return the ${toolName} payload`);
+    error.publicMessage = "Claude did not return structured data.";
     error.statusCode = 502;
     throw error;
   }

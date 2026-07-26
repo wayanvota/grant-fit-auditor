@@ -1,25 +1,30 @@
 # Grant Fit Auditor
 
-Grant Fit Auditor demonstrates a simple editorial argument as software: use AI to apply to fewer grants, not more.
+Grant Fit Auditor demonstrates a simple editorial argument as software: use AI to apply to fewer grants and route reviewer attention more carefully.
 
-The tool asks for grant guidelines and a short NGO profile. It returns extracted requirements, eligibility checks, inferred scoring pressure, ranked gaps, and a pursuit recommendation. The interface keeps the human boundary visible because the strongest use of AI in grant work is not more volume. It is earlier refusal.
+The default applicant-side mode asks for grant guidelines and a short NGO profile. It returns extracted requirements, eligibility checks, inferred scoring pressure, ranked gaps, and a pursuit recommendation.
+
+Reviewer-side mode reverses the comparison. A funder provides its published criteria and up to six applicant profiles. The tool returns a cited worklist grouped into `ELIGIBILITY UNCERTAIN`, `OUTSIDE STATED SCOPE`, and `MEETS STATED CRITERIA`. It never attaches a numeric or letter score to an applicant, ranks applicants by merit, or makes a funding recommendation. A human confirms every routing disposition.
 
 ## Architecture
 
 - Frontend: static HTML, CSS, and vanilla JavaScript in `public/`.
 - Backend: Express server in `server.js`.
 - Audit endpoint: `POST /audit`.
+- Reviewer endpoint: streaming `POST /funder-audit`.
 - RFP inputs: pasted text, server-side URL fetch, or uploaded PDF.
 - PDF extraction: `pdf-parse`. Version 1 does not run OCR.
 - URL extraction: server-side fetch with a 30-second timeout and lightweight HTML cleanup.
 - AI providers: Claude or ChatGPT, selected by the user.
-- Data storage: none. Each audit is one request and one response.
+- Reviewer batch: six applicants maximum, processed with concurrency of two after one criteria-extraction call. One applicant failure does not fail the batch.
+- Reviewer exports: CSV download and print-to-PDF, including citations and human confirmation state.
+- Data storage: none. Criteria, applicant profiles, results, and human confirmation state remain in the request or browser session.
 
 Provider adapters live under `src/providers/`:
 
 - `anthropic.js` uses Claude with forced tool use.
 - `openai.js` uses the OpenAI Responses API with Structured Outputs.
-- Both providers return the same schema from `src/auditSchema.js`.
+- Both providers return the same applicant-side and reviewer-side schemas from `src/auditSchema.js`.
 
 ## Environment
 

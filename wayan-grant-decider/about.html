@@ -4,110 +4,68 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>About Grant Fit Auditor</title>
-    <meta name="description" content="About Grant Fit Auditor.">
-    <style>
-      :root {
-        --page: #f7f9fc;
-        --ink: #111827;
-        --muted: #475569;
-        --line: #d8dee8;
-        --panel: #ffffff;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        background: var(--page);
-        color: var(--ink);
-        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-      main {
-        width: min(900px, 100%);
-        margin: 0 auto;
-        padding: 28px 20px;
-      }
-      nav {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 28px;
-      }
-      nav a {
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: #ffffff;
-        padding: 8px 12px;
-        color: var(--muted);
-        font-size: 14px;
-        font-weight: 700;
-        text-decoration: none;
-      }
-      article {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--panel);
-        padding: 28px;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-      }
-      h1 {
-        margin: 0;
-        font-size: clamp(34px, 6vw, 58px);
-        line-height: 1.05;
-      }
-      h2 {
-        margin-top: 24px;
-      }
-      p {
-        color: var(--muted);
-        font-size: 18px;
-        line-height: 1.65;
-      }
-      .button {
-        display: inline-flex;
-        margin-top: 12px;
-        border-radius: 6px;
-        background: var(--ink);
-        color: #ffffff;
-        padding: 12px 14px;
-        font-weight: 800;
-        text-decoration: none;
-      }
-      .author-section {
-        margin-top: 28px;
-        border-top: 1px solid var(--line);
-        padding-top: 22px;
-      }
-      .step {
-        display: inline-flex;
-        margin-bottom: 8px;
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 800;
-        text-transform: uppercase;
-      }
-    </style>
+    <meta name="description" content="Why Grant Fit Auditor was built and where human judgment remains essential.">
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <main>
-      <nav>
+    <header class="site-header">
+      <nav class="top-nav" aria-label="Grant Fit Auditor navigation">
         <a href="https://wayan.com/grant-decider/index.html">Home</a>
         <a href="https://grant-fit-auditor.onrender.com/">Auditor</a>
-        <a href="https://wayan.com/grant-decider/about.html">About</a>
+        <a class="active" href="https://wayan.com/grant-decider/about.html" aria-current="page">About</a>
+        <span class="nav-note">Grant discipline, from both sides</span>
       </nav>
-      <article>
-        <h1>About Grant Fit Auditor</h1>
-        <p>Grant Fit Auditor is a working demonstration of a simple claim: grant teams should use AI to apply to fewer grants more strategically.</p>
-        <p>The tool extracts requirements, checks eligibility, infers scoring pressure, identifies gaps, and recommends whether the organization should pursue, refuse, or pursue with work.</p>
-        <h2>The boundary</h2>
-        <p>Humans set strategy. AI audits the text it is given. The tool refuses to define what an organization should pursue, invent unstated funder expectations, or certify whether internal evidence is accurate.</p>
-        <section class="author-section" id="author">
-          <span class="step">Author</span>
+    </header>
+
+    <main class="page-shell">
+      <header class="article-hero">
+        <p class="eyebrow">About the tool</p>
+        <h1>AI should make grant teams more selective.</h1>
+        <p class="lede">Grant Fit Auditor turns a published call into a cited decision brief before organizations commit weeks to a proposal or reviewers commit hours to the wrong applications.</p>
+      </header>
+
+      <section class="article-grid">
+        <div>
+          <p class="section-label">The argument</p>
+          <h2>Earlier judgment beats faster volume.</h2>
+        </div>
+        <div class="prose">
+          <p>Most grant technology promises faster search, faster drafting, and more submissions. That incentive is backward. A weak opportunity still consumes leadership attention, technical input, budgeting, partnerships, and staff time, even when AI produces the first draft.</p>
+          <p>Applicant mode extracts requirements, tests stated eligibility, identifies competitive gaps, and recommends whether the organization should pursue, refuse, or pursue with work.</p>
+          <p>Reviewer mode reverses the comparison. It groups applicants against the criteria the funder published, shows source text on both sides, and routes attention without producing an applicant score or funding recommendation.</p>
+        </div>
+      </section>
+
+      <section class="article-grid">
+        <div>
+          <p class="section-label">The boundary</p>
+          <h2>Human judgment remains visible.</h2>
+        </div>
+        <ul class="principles">
+          <li>Leaders define what the organization will pursue and what it will refuse.</li>
+          <li>Funders own every review disposition and every final funding decision.</li>
+          <li>The tool applies only criteria found in the published text.</li>
+          <li>The tool reads claims but does not verify whether they are accurate.</li>
+          <li>No database stores calls, applicant profiles, or results.</li>
+        </ul>
+      </section>
+
+      <section class="author-section" id="author">
+        <div>
+          <p class="section-label">Author</p>
           <h2>Developed by Wayan Vota</h2>
-          <p>This site was built by Wayan Vota as a working argument for NGO leaders weighing grant opportunities. He created the concept, sample scenario, and editorial framing, then used OpenAI Codex to build the application.</p>
-          <p>The design choice behind the site is simple: expose requirements, surface fit gaps, and help teams make an earlier pursuit decision before proposal momentum takes over.</p>
-        </section>
-        <p><a class="button" id="appLink" href="https://grant-fit-auditor.onrender.com/">Open the auditor</a></p>
-      </article>
+        </div>
+        <div class="prose">
+          <p>Wayan Vota built Grant Fit Auditor as a working argument for social impact leaders weighing grant opportunities. He created the concept, fictional scenario, product boundaries, and editorial framing, then used OpenAI Codex to build the application.</p>
+          <p>The design choice is deliberate: make requirements inspectable, make uncertainty visible, and keep consequential decisions with people.</p>
+          <div class="actions">
+            <a class="button accent" id="appLink" href="https://grant-fit-auditor.onrender.com/">Open the auditor</a>
+            <a class="button secondary" href="https://wayan.com/grant-decider/index.html">Return home</a>
+          </div>
+        </div>
+      </section>
     </main>
+
     <script>
       const APP_URL = "https://grant-fit-auditor.onrender.com/";
       document.getElementById("appLink").href = APP_URL;
