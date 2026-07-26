@@ -27,6 +27,7 @@ const results = document.querySelector("#results");
 
 const reviewerForm = document.querySelector("#reviewerForm");
 const loadReviewerDemo = document.querySelector("#loadReviewerDemo");
+const reviewerDemoNote = document.querySelector("#reviewerDemoNote");
 const reviewerSubmitButton = document.querySelector("#reviewerSubmitButton");
 const criteriaText = document.querySelector("#criteriaText");
 const criteriaUrl = document.querySelector("#criteriaUrl");
@@ -88,7 +89,7 @@ function selectedProvider(targetForm) {
 }
 
 function providerLabel(value) {
-  if (value === "demo") return "Demo";
+  if (value === "demo" || value === "saved-example") return "Saved example";
   return value === "openai" ? "ChatGPT" : "Claude";
 }
 
@@ -219,8 +220,17 @@ function loadReviewerDemoScenario() {
   criteriaPdf.value = "";
   applicantSet.value = window.GRANT_FIT_FUNDER_DEMO.applicantSet;
   setSourceMode("text");
+  reviewerDemoNote.hidden = false;
+  humanReviewState.clear();
   renderReviewerResults(window.GRANT_FIT_FUNDER_DEMO.result);
-  reviewerStatusLine.textContent = "Illustrative fictional worklist loaded. Run triage to generate a new provider audit.";
+  reviewerStatusLine.textContent = "Saved fictional example loaded instantly. Run triage to generate a new live analysis.";
+
+  const uncertainRow = reviewerResults.querySelector('[data-applicant-id="applicant_2"]');
+  if (uncertainRow) {
+    uncertainRow.open = true;
+    const twoSidedCitation = uncertainRow.querySelector(".citation-detail");
+    if (twoSidedCitation) twoSidedCitation.open = true;
+  }
 }
 
 function statusClass(status) {
@@ -338,7 +348,9 @@ function renderReviewerResults(payload) {
   ]));
 
   reviewerProviderBadge.textContent = provider;
-  reviewerStatusLine.textContent = `${provider} triage complete. ${completed.length} processed${failed.length ? `, ${failed.length} needs manual follow-up` : ""}.`;
+  reviewerStatusLine.textContent = payload.savedExample
+    ? `Saved fictional example. ${completed.length} applicants shown in triage order.`
+    : `${provider} triage complete. ${completed.length} processed${failed.length ? `, ${failed.length} needs manual follow-up` : ""}.`;
   reviewerEmptyState.hidden = true;
   reviewerResults.hidden = false;
   exportCsv.hidden = false;
@@ -405,7 +417,7 @@ function renderApplicantRow(applicant) {
   const result = applicant.result;
   const reviewValue = humanReviewState.get(applicant.id) || "pending";
   return `
-    <details class="applicant-row">
+    <details class="applicant-row" data-applicant-id="${escapeHtml(applicant.id)}">
       <summary>
         <span>
           <strong>${escapeHtml(applicant.name)}</strong>
@@ -524,6 +536,7 @@ async function submitReviewerAudit(event) {
   exportCsv.hidden = true;
   exportPdf.hidden = true;
   reviewerPayload = null;
+  reviewerDemoNote.hidden = true;
   humanReviewState.clear();
   setReviewerProgress(`${label} is extracting the published criteria once.`);
   startReviewerProgress();
@@ -590,6 +603,7 @@ function handleReviewerEvent(event) {
 function exportReviewerCsv() {
   if (!reviewerPayload) return;
   const headers = [
+    "Ordering note",
     "Applicant",
     "Eligibility bucket",
     "Triage disposition",
@@ -603,10 +617,11 @@ function exportReviewerCsv() {
   ];
   const rows = reviewerPayload.applicants.map((applicant) => {
     if (applicant.status === "error") {
-      return [applicant.name, "", "", "", "", "", "", "", "Pending manual follow-up", applicant.error];
+      return ["Triage order for reviewer attention", applicant.name, "", "", "", "", "", "", "", "Pending manual follow-up", applicant.error];
     }
     const result = applicant.result;
     return [
+      "Triage order for reviewer attention",
       applicant.name,
       result.eligibility_bucket,
       result.triage_disposition,
@@ -672,6 +687,10 @@ exportPdf.addEventListener("click", exportReviewerPdf);
 
 setMode("applicant");
 setSourceMode("text");
-if (new URLSearchParams(window.location.search).get("demo") === "1") {
+const initialParams = new URLSearchParams(window.location.search);
+if (initialParams.get("reviewer-demo") === "1") {
+  setMode("reviewer");
+  loadReviewerDemoScenario();
+} else if (initialParams.get("demo") === "1") {
   loadDemoScenario();
 }
