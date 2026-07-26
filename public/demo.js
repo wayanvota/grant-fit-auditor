@@ -102,3 +102,201 @@ Strengths: deep CHW network, strong language localization, voice-first design fo
 
 Gaps the leadership acknowledges privately: no Direct-to-Participant experience (all delivery routes through CHWs), no published methodology for technology-facilitated GBV risk identification, MEL approach has not been stress-tested at the 50,000-user scale, no formal privacy framework documentation, partnership network is concentrated in Kenya with no regional scale plan beyond three counties.`
 };
+
+window.GRANT_FIT_FUNDER_DEMO = {
+  criteriaText: window.GRANT_FIT_DEMO.rfpText,
+  applicantSet: String.raw`Mama Mobile Health
+
+Mama Mobile Health is a fictional Nairobi nonprofit using voice and SMS services to improve maternal and child health access in Kenya. It reaches 12,000 women per year through community health workers and clinics, with documented improvements in antenatal care and care-seeking. The profile does not explain a credible 18-month path to 50,000 direct women users, a formal data protection framework, or a technology-facilitated gender-based violence safeguarding protocol.
+
+---
+
+SisterLink Direct
+
+SisterLink Direct is a fictional women-led nonprofit operating direct-to-participant mobile services in Kenya and Uganda. Its voice and low-bandwidth application currently reaches 38,000 women and has a contracted partner pathway to 65,000 users within 18 months. The organization documents informed consent, privacy governance, technology-facilitated gender-based violence safeguards, regional partners, a costed scale plan, and outcome monitoring across income and disability groups.
+
+---
+
+Community Arts Exchange
+
+Community Arts Exchange is a fictional nonprofit supporting youth-led public art, cultural festivals, and artist residencies in Southern Africa. It does not provide health, finance, livelihoods, education, or protection services to women through digital technology. Its profile focuses on public installations, cultural exchange, and gallery partnerships.
+
+---
+
+WomenConnect Labs
+
+WomenConnect Labs is a fictional early-stage organization developing an offline-first digital livelihoods platform for women in rural East Africa. The profile describes strong user research, local language design, and preliminary partnerships. It does not state the organization's legal registration status, annual budget, current participant count, safeguarding process, or evidence that it can reach 50,000 women within 18 months.`,
+  result: {
+    provider: "demo",
+    model: "fictional-preview",
+    criteria_extracted: [
+      {
+        criterion_id: "criterion_direct_reach",
+        criterion: "Reach at least 50,000 women users within 18 months through direct-to-participant delivery.",
+        mandatory: true,
+        source_citation: "RFP para 8",
+        source_quote: "reach and retain at least 50,000 women users within 18 months"
+      },
+      {
+        criterion_id: "criterion_safeguarding",
+        criterion: "Document safeguards for technology-facilitated gender-based violence, fraud, and backlash.",
+        mandatory: true,
+        source_citation: "RFP para 12",
+        source_quote: "safeguards related to technology-facilitated GBV, fraud, and backlash"
+      }
+    ],
+    criteria_warnings: [],
+    source: {
+      type: "text",
+      label: "Fictional SheConnects call",
+      characterCount: window.GRANT_FIT_DEMO.rfpText.length,
+      warnings: []
+    },
+    applicants: [
+      {
+        id: "applicant_1",
+        name: "Mama Mobile Health",
+        status: "complete",
+        result: {
+          eligibility_bucket: "ELIGIBILITY UNCERTAIN",
+          bucket_reasoning: "The profile supports thematic fit but does not establish the required direct scale pathway or safeguarding framework.",
+          bucket_citations: {
+            criteria: [
+              {
+                source_citation: "RFP para 8",
+                source_quote: "reach and retain at least 50,000 women users within 18 months"
+              }
+            ],
+            applicant: [
+              {
+                source_citation: "Applicant para 2",
+                source_quote: "It reaches 12,000 women per year through community health workers and clinics"
+              }
+            ]
+          },
+          flagged_mismatches: [],
+          missing_or_ambiguous: [
+            {
+              item: "Direct scale pathway",
+              why_needed: "The call requires a credible path to 50,000 women users within 18 months.",
+              criteria_citation: "RFP para 8",
+              applicant_citation: "Applicant para 2",
+              applicant_quote: "The profile does not explain a credible 18-month path to 50,000 direct women users"
+            },
+            {
+              item: "Safeguarding protocol",
+              why_needed: "The call requires explicit technology-facilitated gender-based violence safeguards.",
+              criteria_citation: "RFP para 12",
+              applicant_citation: "Applicant para 2",
+              applicant_quote: "The profile does not explain a technology-facilitated gender-based violence safeguarding protocol"
+            }
+          ],
+          triage_disposition: "NEEDS HUMAN CHECK",
+          disposition_reasoning: "A reviewer must confirm whether evidence exists outside the profile.",
+          warnings: []
+        }
+      },
+      {
+        id: "applicant_2",
+        name: "SisterLink Direct",
+        status: "complete",
+        result: {
+          eligibility_bucket: "MEETS STATED CRITERIA",
+          bucket_reasoning: "The profile states direct delivery, a documented scale pathway, safeguards, and regional partnerships.",
+          bucket_citations: {
+            criteria: [
+              {
+                source_citation: "RFP para 8",
+                source_quote: "reach and retain at least 50,000 women users within 18 months"
+              }
+            ],
+            applicant: [
+              {
+                source_citation: "Applicant para 2",
+                source_quote: "a contracted partner pathway to 65,000 users within 18 months"
+              }
+            ]
+          },
+          flagged_mismatches: [],
+          missing_or_ambiguous: [],
+          triage_disposition: "ROUTE TO FULL REVIEW",
+          disposition_reasoning: "The profile addresses the mandatory stated criteria.",
+          warnings: []
+        }
+      },
+      {
+        id: "applicant_3",
+        name: "Community Arts Exchange",
+        status: "complete",
+        result: {
+          eligibility_bucket: "OUTSIDE STATED SCOPE",
+          bucket_reasoning: "The described work directly conflicts with the call's sector and participant-delivery scope.",
+          bucket_citations: {
+            criteria: [
+              {
+                source_citation: "RFP para 6",
+                source_quote: "directly provide health, finance, education, livelihoods, or protection services to women"
+              }
+            ],
+            applicant: [
+              {
+                source_citation: "Applicant para 2",
+                source_quote: "supporting youth-led public art, cultural festivals, and artist residencies"
+              }
+            ]
+          },
+          flagged_mismatches: [
+            {
+              criterion_id: "criterion_sector_scope",
+              mismatch: "The applicant describes arts programming rather than an eligible service delivered to women.",
+              criteria_citation: "RFP para 6",
+              criteria_quote: "health, finance, education, livelihoods, or protection services to women",
+              applicant_citation: "Applicant para 2",
+              applicant_quote: "youth-led public art, cultural festivals, and artist residencies"
+            }
+          ],
+          missing_or_ambiguous: [],
+          triage_disposition: "CONFIRM AGAINST SCOPE",
+          disposition_reasoning: "A reviewer should confirm the direct conflict with the published scope.",
+          warnings: []
+        }
+      },
+      {
+        id: "applicant_4",
+        name: "WomenConnect Labs",
+        status: "complete",
+        result: {
+          eligibility_bucket: "ELIGIBILITY UNCERTAIN",
+          bucket_reasoning: "The concept fits the call, but the profile omits facts needed to confirm eligibility and delivery readiness.",
+          bucket_citations: {
+            criteria: [
+              {
+                source_citation: "RFP para 4",
+                source_quote: "registered nonprofit organizations with demonstrated operational capacity"
+              }
+            ],
+            applicant: [
+              {
+                source_citation: "Applicant para 2",
+                source_quote: "a fictional early-stage organization developing an offline-first digital livelihoods platform"
+              }
+            ]
+          },
+          flagged_mismatches: [],
+          missing_or_ambiguous: [
+            {
+              item: "Registration and operating capacity",
+              why_needed: "The published eligibility rule requires both.",
+              criteria_citation: "RFP para 4",
+              applicant_citation: "Applicant para 2",
+              applicant_quote: "It does not state the organization's legal registration status, annual budget, or current participant count"
+            }
+          ],
+          triage_disposition: "NEEDS HUMAN CHECK",
+          disposition_reasoning: "A reviewer needs missing eligibility and capacity information.",
+          warnings: []
+        }
+      }
+    ]
+  }
+};

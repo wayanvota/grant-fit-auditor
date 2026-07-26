@@ -4,103 +4,99 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Grant Fit Auditor</title>
-    <meta name="description" content="Use AI to apply to fewer grants, not more.">
-    <style>
-      :root {
-        --page: #f7f9fc;
-        --ink: #111827;
-        --muted: #475569;
-        --line: #d8dee8;
-        --panel: #ffffff;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        background: var(--page);
-        color: var(--ink);
-        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-      main {
-        width: min(980px, 100%);
-        margin: 0 auto;
-        padding: 28px 20px;
-      }
-      nav {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 28px;
-      }
-      nav a {
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: #ffffff;
-        padding: 8px 12px;
-        color: var(--muted);
-        font-size: 14px;
-        font-weight: 700;
-        text-decoration: none;
-      }
-      section {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--panel);
-        padding: 28px;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-      }
-      h1 {
-        margin: 0;
-        max-width: 760px;
-        font-size: clamp(34px, 6vw, 64px);
-        line-height: 1.02;
-      }
-      p {
-        max-width: 760px;
-        color: var(--muted);
-        font-size: 18px;
-        line-height: 1.65;
-      }
-      .button {
-        display: inline-flex;
-        margin-top: 12px;
-        border-radius: 6px;
-        background: var(--ink);
-        color: #ffffff;
-        padding: 12px 14px;
-        font-weight: 800;
-        text-decoration: none;
-      }
-      .boundary {
-        margin-top: 18px;
-        border: 2px dashed var(--ink);
-        border-radius: 8px;
-        background: #fff7ed;
-        padding: 14px;
-      }
-      .boundary strong {
-        display: block;
-        margin-bottom: 6px;
-      }
-    </style>
+    <meta name="description" content="Apply to fewer grants. Review the right ones.">
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <main>
-      <nav>
-        <a href="https://wayan.com/grant-decider/index.html">Home</a>
+    <header class="site-header">
+      <nav class="top-nav" aria-label="Grant Fit Auditor navigation">
+        <a class="active" href="https://wayan.com/grant-decider/index.html" aria-current="page">Home</a>
         <a href="https://grant-fit-auditor.onrender.com/">Auditor</a>
         <a href="https://wayan.com/grant-decider/about.html">About</a>
+        <span class="nav-note">Grant discipline, from both sides</span>
       </nav>
-      <section>
-        <h1>Grant Fit Auditor</h1>
-        <p>Use AI to apply to fewer grants, not more.</p>
-        <p>The tool reads grant guidelines, checks fit against an NGO profile, and names the gaps before a team burns weeks on a weak submission.</p>
-        <a class="button" id="appLink" href="https://grant-fit-auditor.onrender.com/">Open the auditor</a>
-        <div class="boundary">
-          <strong>What AI WON'T do here</strong>
-          Define strategy, invent unstated requirements, or certify whether your evidence file is true. Those are human responsibilities.
+    </header>
+
+    <main class="page-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">A working argument for better grant decisions</p>
+          <h1>Grant Fit Auditor</h1>
+          <p class="lede">Apply to fewer grants. Review the right ones.</p>
+          <p class="intro">The auditor compares published grant criteria with an organization profile, then exposes requirements, uncertainty, and gaps before proposal momentum takes over.</p>
+          <div class="actions">
+            <a class="button accent" id="appLink" href="https://grant-fit-auditor.onrender.com/">Open the auditor</a>
+            <a class="button secondary" href="https://wayan.com/grant-decider/about.html">Read how it works</a>
+          </div>
+        </div>
+
+        <aside class="hero-aside">
+          <p class="section-label">Editorial argument</p>
+          <h2>Built to refuse, not to accelerate volume.</h2>
+          <p>AI should force the hard fit question earlier, while people still have the freedom to walk away.</p>
+        </aside>
+      </section>
+
+      <section class="mode-section">
+        <div class="section-heading">
+          <p class="section-label">One tool, two directions</p>
+          <div>
+            <h2>The same fit question, read from both sides.</h2>
+            <p>Applicant teams decide whether an opportunity deserves their effort. Review teams route attention against the criteria they actually published.</p>
+          </div>
+        </div>
+
+        <div class="mode-grid">
+          <article class="mode-card">
+            <p class="section-label">I am applying</p>
+            <h3>Pressure-test the opportunity before drafting.</h3>
+            <p>Compare the call with your mission, programs, geography, evidence, partnerships, and known gaps.</p>
+            <ul>
+              <li>Extract cited requirements and eligibility conditions.</li>
+              <li>Surface scoring pressure and competitiveness gaps.</li>
+              <li>Get a pursue, refuse, or pursue-with-work recommendation.</li>
+            </ul>
+          </article>
+
+          <article class="mode-card reviewing">
+            <p class="section-label">I am reviewing</p>
+            <h3>Route reviewer attention without scoring applicants.</h3>
+            <p>Compare a published call with a small applicant set, using categorical review states and two-sided citations.</p>
+            <ul>
+              <li>See uncertain and outside-scope cases first.</li>
+              <li>Open every flag to its criteria and applicant sources.</li>
+              <li>Confirm or overturn each routing disposition as a human.</li>
+            </ul>
+          </article>
         </div>
       </section>
+
+      <section class="boundary-section">
+        <p class="section-label">The refusal is the feature</p>
+        <h2>What this tool will not do</h2>
+        <div class="boundary-grid">
+          <div>
+            <strong>Set organizational strategy</strong>
+            <p>Leadership decides which opportunities fit the mission and opportunity cost.</p>
+          </div>
+          <div>
+            <strong>Rank applicants by merit</strong>
+            <p>Reviewer mode uses categorical routing states, never an order of worth.</p>
+          </div>
+          <div>
+            <strong>Invent unpublished criteria</strong>
+            <p>The audit can only apply the requirements present in the text it receives.</p>
+          </div>
+          <div>
+            <strong>Certify that claims are true</strong>
+            <p>Evidence verification and final judgment remain human responsibilities.</p>
+          </div>
+        </div>
+      </section>
+
+      <p class="footer-note">Stateless by design. No database stores criteria, profiles, or worklists.</p>
     </main>
+
     <script>
       const APP_URL = "https://grant-fit-auditor.onrender.com/";
       document.getElementById("appLink").href = APP_URL;
