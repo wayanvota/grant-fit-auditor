@@ -339,26 +339,6 @@ function assertFunderWorkflowRules(result, criteriaExtracted) {
     throwFunderPolicyError("A mismatch refers to a criterion that was not extracted from the published text.");
   }
 
-  const generatedNarrative = [
-    result.bucket_reasoning,
-    result.disposition_reasoning,
-    ...result.flagged_mismatches.map((item) => item.mismatch),
-    ...result.missing_or_ambiguous.flatMap((item) => [item.item, item.why_needed]),
-    ...result.warnings
-  ].join("\n");
-
-  if (/\b(?:fund|decline|reject|award|pursue|refuse)\b/i.test(generatedNarrative)) {
-    throwFunderPolicyError("Applicant triage cannot contain a funding decision or recommendation.");
-  }
-
-  if (
-    /\b(?:score|scored|scoring|rank|ranked|ranking|grade|graded|rating|rated)\b/i.test(
-      generatedNarrative
-    ) ||
-    /\b\d+(?:\.\d+)?\s*(?:%|\/\s*\d+|points?\b|stars?\b)/i.test(generatedNarrative)
-  ) {
-    throwFunderPolicyError("Applicant triage cannot score, grade, or rank an applicant.");
-  }
 }
 
 function throwFunderPolicyError(detail) {

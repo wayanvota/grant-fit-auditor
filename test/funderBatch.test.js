@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   FUNDER_BATCH_LIMIT,
+  FUNDER_CRITERIA_MIN_LENGTH,
+  assertFunderCriteriaSource,
   mapWithConcurrency,
   parseApplicantSet
 } from "../src/funderBatch.js";
@@ -31,4 +33,14 @@ test("bounded batch mapping isolates mapper return values in input order", async
   });
 
   assert.deepEqual(output, [6, 2, 4]);
+});
+
+test("reviewer criteria gate accepts a short valid call and explains the minimum", () => {
+  const validShortCall = "A".repeat(FUNDER_CRITERIA_MIN_LENGTH + 91);
+  assert.equal(assertFunderCriteriaSource(validShortCall), validShortCall);
+
+  assert.throws(
+    () => assertFunderCriteriaSource("A".repeat(FUNDER_CRITERIA_MIN_LENGTH - 1)),
+    new RegExp(`at least ${FUNDER_CRITERIA_MIN_LENGTH} readable characters`)
+  );
 });

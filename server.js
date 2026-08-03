@@ -6,6 +6,7 @@ import { extractSourceText } from "./src/sourceText.js";
 import {
   FUNDER_BATCH_CONCURRENCY,
   FUNDER_BATCH_LIMIT,
+  assertFunderCriteriaSource,
   mapWithConcurrency,
   parseApplicantSet
 } from "./src/funderBatch.js";
@@ -101,11 +102,7 @@ app.post("/funder-audit", upload.single("criteriaPdf"), async (req, res) => {
       pdfFile: req.file
     });
 
-    if (!source.text || source.text.length < 500) {
-      return res.status(400).json({
-        error: "The criteria source did not produce enough readable text to audit."
-      });
-    }
+    assertFunderCriteriaSource(source.text);
 
     res.status(200);
     res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
@@ -156,7 +153,6 @@ app.post("/funder-audit", upload.single("criteriaPdf"), async (req, res) => {
         try {
           const response = await runFunderApplicant({
             provider,
-            criteriaText: source.text,
             criteriaExtracted,
             applicantName: applicant.name,
             applicantProfile: applicant.profile
