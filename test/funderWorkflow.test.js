@@ -126,13 +126,33 @@ test("workflow 4: a mismatch cannot rely on an unpublished criterion", () => {
   );
 });
 
-test("workflow 5: reviewer output cannot hide a score or funding decision in prose", () => {
-  const scored = citedResult({
-    bucket_reasoning: "The applicant scored 92% and should receive an award."
+test("workflow 5: decision fields remain categorical and reject added score or ranking fields", () => {
+  for (const forbiddenField of [
+    { score: 92 },
+    { rank: 1 },
+    { fundingDecision: "FUND" }
+  ]) {
+    assert.throws(
+      () => assertFunderApplicantResult(
+        citedResult(forbiddenField),
+        { criteriaExtracted }
+      ),
+      /invalid applicant triage JSON/
+    );
+  }
+});
+
+test("workflow 6: harmless safeguard terms and applicant numbers survive in narrative fields", () => {
+  const result = citedResult({
+    bucket_reasoning: "The applicant reports 100% retention and a 5/5 rating; neither claim is independently verified.",
+    disposition_reasoning: "Route by published eligibility only. This is not a rank or funding decision.",
+    warnings: [
+      "Do not use the unverified claim to fund, decline, award, or reject the application."
+    ]
   });
 
-  assert.throws(
-    () => assertFunderApplicantResult(scored, { criteriaExtracted }),
-    /funding decision|score, grade, or rank/
+  assert.equal(
+    assertFunderApplicantResult(result, { criteriaExtracted }),
+    result
   );
 });

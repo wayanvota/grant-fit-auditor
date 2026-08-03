@@ -375,6 +375,13 @@ function renderReviewerResults(payload) {
       `)}
     </details>
 
+    ${payload.criteria_warnings?.length ? `
+      <section class="warning-panel">
+        <p class="panel-label">Criteria extraction notes</p>
+        ${renderList(payload.criteria_warnings, (warning) => escapeHtml(warning))}
+      </section>
+    ` : ""}
+
     ${failed.length ? `
       <section class="bucket-group error-group">
         <div class="bucket-heading">
@@ -470,6 +477,13 @@ function renderApplicantRow(applicant) {
             `) : "<p>No missing information returned.</p>"}
           </section>
         </div>
+
+        ${result.warnings?.length ? `
+          <section class="warning-panel">
+            <p class="panel-label">Verification warnings</p>
+            ${renderList(result.warnings, (warning) => escapeHtml(warning))}
+          </section>
+        ` : ""}
 
         <section class="human-confirmation">
           <div>
@@ -612,12 +626,14 @@ function exportReviewerCsv() {
     "Applicant citations",
     "Flagged mismatches",
     "Missing or ambiguous",
+    "Verification warnings",
+    "Criteria extraction notes",
     "Human review status",
     "Processing error"
   ];
   const rows = reviewerPayload.applicants.map((applicant) => {
     if (applicant.status === "error") {
-      return ["Triage order for reviewer attention", applicant.name, "", "", "", "", "", "", "", "Pending manual follow-up", applicant.error];
+      return ["Triage order for reviewer attention", applicant.name, "", "", "", "", "", "", "", "", reviewerPayload.criteria_warnings?.join(" | ") || "", "Pending manual follow-up", applicant.error];
     }
     const result = applicant.result;
     return [
@@ -630,6 +646,8 @@ function exportReviewerCsv() {
       result.bucket_citations.applicant.map(formatCitation).join(" | "),
       result.flagged_mismatches.map((item) => `${item.mismatch} [${item.criteria_citation}; ${item.applicant_citation}]`).join(" | "),
       result.missing_or_ambiguous.map((item) => `${item.item}: ${item.why_needed}`).join(" | "),
+      result.warnings?.join(" | ") || "",
+      reviewerPayload.criteria_warnings?.join(" | ") || "",
       humanReviewLabel(humanReviewState.get(applicant.id) || "pending"),
       ""
     ];

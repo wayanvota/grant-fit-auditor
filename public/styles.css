@@ -1112,6 +1112,24 @@ select:focus {
   color: var(--ink);
 }
 
+.warning-panel {
+  border: 1px solid var(--amber);
+  border-radius: 6px;
+  background: var(--amber-soft);
+  padding: 13px;
+}
+
+.warning-panel ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.warning-panel li {
+  color: #684933;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .citation-detail > p {
   border-top: 1px solid var(--line);
   padding: 8px 10px;

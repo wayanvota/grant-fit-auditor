@@ -1,5 +1,16 @@
 export const FUNDER_BATCH_LIMIT = 6;
 export const FUNDER_BATCH_CONCURRENCY = 2;
+export const FUNDER_CRITERIA_MIN_LENGTH = 250;
+
+export function assertFunderCriteriaSource(text) {
+  const readableText = String(text || "").trim();
+  if (readableText.length < FUNDER_CRITERIA_MIN_LENGTH) {
+    throw publicInputError(
+      `Add at least ${FUNDER_CRITERIA_MIN_LENGTH} readable characters of published criteria before running reviewer triage.`
+    );
+  }
+  return readableText;
+}
 
 export function parseApplicantSet(rawValue) {
   const raw = String(rawValue || "").trim();

@@ -57,6 +57,10 @@ The software boundary is deliberate:
 - Added an instant `?reviewer-demo=1` path with Grand Prairie expanded and its two-sided citations visible.
 - Added publication-firewall tests for embargoed funder references and the rule that AI providers appear only as analysis engines.
 - Confirmed triage-order labeling in the interface and CSV export, with no applicant score column.
+- Replaced reviewer prose keyword tripwires with structural schema and workflow checks, so legitimate words such as "rank," "fund," or "100%" cannot erase an otherwise valid result.
+- Removed raw funder text from per-applicant provider calls after criteria extraction, preventing excluded ranking and funding instructions from leaking back into applicant reasoning.
+- Added adversarial regressions for prompt injection, ordinary funder scoring language, unverified outcome claims, forbidden structural fields, and the shorter reviewer criteria gate.
+- Exposed criteria-extraction exclusions and applicant verification warnings in the reviewer worklist, CSV export, and print-to-PDF output.
 - Verified the applicant-side mode remains the default.
 - Verified reviewer mode, source selection, fictional demo coverage, row expansion, citations, confirmation controls, and browser console state.
 - Implemented the static FTP pages in `wayan-grant-decider/`.
