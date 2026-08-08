@@ -1,6 +1,7 @@
 export const FUNDER_BATCH_LIMIT = 6;
 export const FUNDER_BATCH_CONCURRENCY = 2;
 export const FUNDER_CRITERIA_MIN_LENGTH = 250;
+export const FUNDER_APPLICANT_MIN_LENGTH = 80;
 
 export function assertFunderCriteriaSource(text) {
   const readableText = String(text || "").trim();
@@ -30,11 +31,7 @@ export function parseApplicantSet(rawValue) {
   }
 
   const applicants = blocks.map((profile, index) => {
-    if (profile.length < 80) {
-      throw publicInputError(
-        `Applicant ${index + 1} needs a fuller profile. Include mission, geography, programs, scale, and evidence where available.`
-      );
-    }
+    assertFunderApplicantSource(profile, index);
 
     return {
       id: `applicant_${index + 1}`,
@@ -44,6 +41,16 @@ export function parseApplicantSet(rawValue) {
   });
 
   return applicants;
+}
+
+export function assertFunderApplicantSource(text, index = 0) {
+  const readableText = String(text || "").trim();
+  if (readableText.length < FUNDER_APPLICANT_MIN_LENGTH) {
+    throw publicInputError(
+      `Applicant ${index + 1} needs a fuller profile. Include mission, geography, programs, scale, and evidence where available.`
+    );
+  }
+  return readableText;
 }
 
 export async function mapWithConcurrency(items, limit, mapper) {

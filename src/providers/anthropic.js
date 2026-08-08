@@ -1,8 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
-  auditSchema,
-  funderApplicantSchema,
-  funderCriteriaSchema
+  auditProviderSchema,
+  funderApplicantProviderSchema,
+  funderCriteriaProviderSchema
 } from "../auditSchema.js";
 import { buildUserPrompt, systemPrompt } from "../auditPrompt.js";
 import {
@@ -13,23 +13,27 @@ import {
 } from "../funderPrompt.js";
 import { publicProviderError } from "../providerErrors.js";
 
-export async function runAnthropicAudit({ rfpText, ngoProfile }) {
+export async function runAnthropicAudit({ rfpText, ngoProfile, validationError, timeoutMs }) {
   return runAnthropicStructured({
     system: systemPrompt,
     prompt: buildUserPrompt({ rfpText, ngoProfile }),
-    schema: auditSchema,
+    schema: auditProviderSchema,
     toolName: "submit_grant_fit_audit",
-    toolDescription: "Return the structured grant fit audit."
+    toolDescription: "Return the structured grant fit audit.",
+    validationError,
+    timeoutMs
   });
 }
 
-export async function runAnthropicFunderCriteria({ criteriaText }) {
+export async function runAnthropicFunderCriteria({ criteriaText, validationError, timeoutMs }) {
   return runAnthropicStructured({
     system: funderCriteriaSystemPrompt,
     prompt: buildFunderCriteriaPrompt(criteriaText),
-    schema: funderCriteriaSchema,
+    schema: funderCriteriaProviderSchema,
     toolName: "submit_funder_criteria",
-    toolDescription: "Return the criteria extracted from the funder's published text."
+    toolDescription: "Return the criteria extracted from the funder's published text.",
+    validationError,
+    timeoutMs
   });
 }
 
@@ -37,9 +41,11 @@ export async function runAnthropicFunderApplicant(input) {
   return runAnthropicStructured({
     system: funderApplicantSystemPrompt,
     prompt: buildFunderApplicantPrompt(input),
-    schema: funderApplicantSchema,
+    schema: funderApplicantProviderSchema,
     toolName: "submit_applicant_triage",
-    toolDescription: "Return the cited review-routing result for one applicant."
+    toolDescription: "Return the cited review-routing result for one applicant.",
+    validationError: input.validationError,
+    timeoutMs: input.timeoutMs
   });
 }
 
@@ -48,7 +54,9 @@ async function runAnthropicStructured({
   prompt,
   schema,
   toolName,
-  toolDescription
+  toolDescription,
+  validationError,
+  timeoutMs
 }) {
   if (!process.env.ANTHROPIC_API_KEY) {
     const error = new Error("ANTHROPIC_API_KEY is not configured");
@@ -85,10 +93,10 @@ async function runAnthropicStructured({
       messages: [
         {
           role: "user",
-          content: prompt
+          content: promptWithValidationCorrection(prompt, validationError)
         }
       ]
-    });
+    }, timeoutMs ? { timeout: timeoutMs } : undefined);
   } catch (error) {
     throw publicProviderError("Claude", error);
   }
@@ -98,6 +106,8 @@ async function runAnthropicStructured({
     const error = new Error(`Claude did not return the ${toolName} payload`);
     error.publicMessage = "Claude did not return structured data.";
     error.statusCode = 502;
+    error.code = "SCHEMA_VALIDATION_FAILED";
+    error.validationDetail = `The ${toolName} tool payload was missing.`;
     throw error;
   }
 
@@ -113,4 +123,9 @@ async function runAnthropicStructured({
         (response.usage?.cache_creation_input_tokens || 0)
     }
   };
+}
+
+function promptWithValidationCorrection(prompt, validationError) {
+  if (!validationError) return prompt;
+  return `${prompt}\n\nSCHEMA CORRECTION FOR THIS SINGLE RETRY:\nThe previous response failed validation: ${validationError}\nReturn a corrected payload matching the schema exactly.`;
 }
