@@ -2,6 +2,15 @@ export function publicProviderError(providerName, error) {
   const message = providerErrorMessage(error);
   const lowerMessage = message.toLowerCase();
 
+  if (isTimeoutError(error, lowerMessage)) {
+    return wrappedProviderError({
+      providerName,
+      publicMessage: `${providerName} did not finish within the audit time limit.`,
+      statusCode: 504,
+      code: "PROVIDER_TIMEOUT"
+    });
+  }
+
   if (isBillingError(lowerMessage)) {
     const accountName = providerAccountName(providerName);
     return wrappedProviderError({
@@ -30,12 +39,21 @@ export function publicProviderError(providerName, error) {
   });
 }
 
-function wrappedProviderError({ providerName, publicMessage, statusCode }) {
+function wrappedProviderError({ providerName, publicMessage, statusCode, code }) {
   const wrapped = new Error(publicMessage);
   wrapped.publicMessage = publicMessage;
   wrapped.providerName = providerName;
   wrapped.statusCode = statusCode;
+  if (code) wrapped.code = code;
   return wrapped;
+}
+
+function isTimeoutError(error, lowerMessage) {
+  return error?.status === 408 ||
+    error?.status === 504 ||
+    error?.code === "ETIMEDOUT" ||
+    error?.name === "AbortError" ||
+    /timed? out|timeout|aborted/.test(lowerMessage);
 }
 
 function providerErrorMessage(error) {

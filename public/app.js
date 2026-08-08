@@ -257,6 +257,10 @@ function renderList(items, mapper) {
 
 function renderResults(payload) {
   const result = payload.result;
+  if (isTerminalHumanCheck(result)) {
+    renderApplicantHumanCheck(payload);
+    return;
+  }
   const recommendation = result.pursuit_recommendation;
   const provider = providerLabel(payload.provider);
 
@@ -326,6 +330,16 @@ function renderResults(payload) {
   `;
 }
 
+function renderApplicantHumanCheck(payload) {
+  const provider = providerLabel(payload.provider);
+  stopProgress();
+  providerBadge.textContent = "Human check";
+  statusLine.textContent = `${provider} did not produce an audit judgment. Human review is required.`;
+  emptyState.hidden = true;
+  results.hidden = false;
+  results.innerHTML = humanCheckMarkup(payload.result);
+}
+
 function renderCitationList(items) {
   if (!items?.length) return "<p>No supporting citation returned.</p>";
   return `<ul class="citation-list">${items.map((item) => `
@@ -340,7 +354,18 @@ function renderReviewerResults(payload) {
   reviewerPayload = payload;
   stopReviewerProgress();
   const provider = providerLabel(payload.provider);
+  if (isTerminalHumanCheck(payload)) {
+    reviewerProviderBadge.textContent = "Human check";
+    reviewerStatusLine.textContent = `${provider} did not produce a reviewer judgment. Human review is required.`;
+    reviewerEmptyState.hidden = true;
+    reviewerResults.hidden = false;
+    exportCsv.hidden = true;
+    exportPdf.hidden = true;
+    reviewerResults.innerHTML = humanCheckMarkup(payload);
+    return;
+  }
   const completed = payload.applicants.filter((applicant) => applicant.status === "complete");
+  const humanChecks = payload.applicants.filter((applicant) => applicant.status === "human_check");
   const failed = payload.applicants.filter((applicant) => applicant.status === "error");
   const counts = Object.fromEntries(reviewerBucketOrder.map((bucket) => [
     bucket,
@@ -350,7 +375,7 @@ function renderReviewerResults(payload) {
   reviewerProviderBadge.textContent = provider;
   reviewerStatusLine.textContent = payload.savedExample
     ? `Saved fictional example. ${completed.length} applicants shown in triage order.`
-    : `${provider} triage complete. ${completed.length} processed${failed.length ? `, ${failed.length} needs manual follow-up` : ""}.`;
+    : `${provider} triage complete. ${completed.length} judgments produced${humanChecks.length ? `, ${humanChecks.length} withheld for human review` : ""}${failed.length ? `, ${failed.length} processing errors` : ""}.`;
   reviewerEmptyState.hidden = true;
   reviewerResults.hidden = false;
   exportCsv.hidden = false;
@@ -397,6 +422,21 @@ function renderReviewerResults(payload) {
       </section>
     ` : ""}
 
+    ${humanChecks.length ? `
+      <section class="bucket-group human-check-group">
+        <div class="bucket-heading">
+          <h3>Judgment withheld, human check required</h3>
+          <span>${humanChecks.length}</span>
+        </div>
+        ${humanChecks.map((applicant) => `
+          <article class="human-check-applicant">
+            <h4>${escapeHtml(applicant.name)}</h4>
+            ${humanCheckMarkup(applicant.result)}
+          </article>
+        `).join("")}
+      </section>
+    ` : ""}
+
     ${reviewerBucketOrder.map((bucket) => {
       const applicants = completed.filter((applicant) => applicant.result.eligibility_bucket === bucket);
       return `
@@ -418,6 +458,48 @@ function renderReviewerResults(payload) {
       humanReviewState.set(select.dataset.applicantId, select.value);
     });
   });
+}
+
+function isTerminalHumanCheck(result) {
+  return result?.state === "NEEDS HUMAN CHECK";
+}
+
+function humanCheckMarkup(result) {
+  const stripped = result.stripped_spans || [];
+  const operations = result.operation_log || [];
+  return `
+    <section class="human-check-panel" role="status" aria-label="Needs human check">
+      <p class="panel-label">No judgment produced</p>
+      <h3>${escapeHtml(result.state)}</h3>
+      <p>${escapeHtml(result.explanation)}</p>
+      <dl>
+        <div><dt>Reason code</dt><dd><code>${escapeHtml(result.reason_code)}</code></dd></div>
+      </dl>
+      ${stripped.length ? `
+        <details>
+          <summary>Review removed source text (${stripped.length})</summary>
+          ${stripped.map((span) => `
+            <div class="stripped-span">
+              <span class="citation">${escapeHtml(span.source)} characters ${escapeHtml(span.start)}-${escapeHtml(span.end)}</span>
+              <pre>${escapeHtml(span.text)}</pre>
+            </div>
+          `).join("")}
+        </details>
+      ` : ""}
+      ${operations.length ? `
+        <details>
+          <summary>Review operation log (${operations.length})</summary>
+          ${renderList(operations, (item) => `<strong>${escapeHtml(item.operation)}</strong><div>${escapeHtml(item.detail)}</div>`)}
+        </details>
+      ` : ""}
+      ${result.last_validation_error ? `
+        <details>
+          <summary>Last validation error</summary>
+          <pre>${escapeHtml(result.last_validation_error)}</pre>
+        </details>
+      ` : ""}
+    </section>
+  `;
 }
 
 function renderApplicantRow(applicant) {
@@ -607,6 +689,8 @@ function handleReviewerEvent(event) {
     setReviewerProgress(`Applicant ${event.applicantIndex + 1} of ${event.applicantCount} complete. Continuing the batch.`);
   } else if (event.type === "applicant_failed") {
     setReviewerProgress(`Applicant ${event.applicantIndex + 1} needs manual follow-up. Continuing the batch.`);
+  } else if (event.type === "applicant_human_check") {
+    setReviewerProgress(`Applicant ${event.applicantIndex + 1} requires a human check. No judgment was recorded.`);
   } else if (event.type === "fatal_error") {
     throw new Error(event.error || "Reviewer triage failed.");
   } else if (event.type === "complete") {
@@ -634,6 +718,23 @@ function exportReviewerCsv() {
   const rows = reviewerPayload.applicants.map((applicant) => {
     if (applicant.status === "error") {
       return ["Triage order for reviewer attention", applicant.name, "", "", "", "", "", "", "", "", reviewerPayload.criteria_warnings?.join(" | ") || "", "Pending manual follow-up", applicant.error];
+    }
+    if (applicant.status === "human_check") {
+      return [
+        "Triage order for reviewer attention",
+        applicant.name,
+        "NEEDS HUMAN CHECK",
+        "",
+        applicant.result.explanation,
+        "",
+        "",
+        "",
+        "",
+        applicant.result.reason_code,
+        reviewerPayload.criteria_warnings?.join(" | ") || "",
+        "Pending manual follow-up",
+        ""
+      ];
     }
     const result = applicant.result;
     return [

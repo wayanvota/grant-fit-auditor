@@ -15,6 +15,7 @@ import {
   runFunderApplicant,
   runFunderCriteria
 } from "./src/providers/index.js";
+import { isHumanCheckResult } from "./src/humanCheck.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,7 +46,9 @@ app.get("/health", (_req, res) => {
   });
 });
 
-app.post("/audit", upload.single("rfpPdf"), async (req, res) => {
+app.post("/audit", upload.single("rfpPdf"), handleAudit);
+
+export async function handleAudit(req, res) {
   try {
     const provider = String(req.body.provider || "anthropic").toLowerCase();
     const ngoProfile = String(req.body.ngoProfile || "").trim();
@@ -90,7 +93,7 @@ app.post("/audit", upload.single("rfpPdf"), async (req, res) => {
       detail: process.env.NODE_ENV === "production" ? undefined : error.message
     });
   }
-});
+}
 
 app.post("/funder-audit", upload.single("criteriaPdf"), async (req, res) => {
   try {
@@ -132,6 +135,24 @@ app.post("/funder-audit", upload.single("criteriaPdf"), async (req, res) => {
       return res.end();
     }
 
+    if (isHumanCheckResult(criteriaResponse.result)) {
+      sendEvent(res, {
+        type: "complete",
+        payload: {
+          provider: criteriaResponse.provider,
+          model: criteriaResponse.model,
+          ...criteriaResponse.result,
+          source: {
+            type: source.type,
+            label: source.label,
+            characterCount: source.text.length,
+            warnings: source.warnings
+          }
+        }
+      });
+      return res.end();
+    }
+
     const criteriaExtracted = criteriaResponse.result.criteria_extracted;
     sendEvent(res, {
       type: "criteria_completed",
@@ -157,6 +178,23 @@ app.post("/funder-audit", upload.single("criteriaPdf"), async (req, res) => {
             applicantName: applicant.name,
             applicantProfile: applicant.profile
           });
+          if (isHumanCheckResult(response.result)) {
+            const record = {
+              id: applicant.id,
+              name: applicant.name,
+              status: "human_check",
+              result: response.result
+            };
+            sendEvent(res, {
+              type: "applicant_human_check",
+              applicantId: applicant.id,
+              applicantName: applicant.name,
+              applicantIndex: index,
+              applicantCount: applicants.length,
+              reasonCode: response.result.reason_code
+            });
+            return record;
+          }
           const record = {
             id: applicant.id,
             name: applicant.name,
@@ -239,9 +277,13 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-app.listen(port, host, () => {
-  console.log(`Grant Fit Auditor running on ${host}:${port}`);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  app.listen(port, host, () => {
+    console.log(`Grant Fit Auditor running on ${host}:${port}`);
+  });
+}
+
+export { app };
 
 function sendEvent(res, event) {
   if (!res.destroyed && !res.writableEnded) {

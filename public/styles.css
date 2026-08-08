@@ -244,6 +244,59 @@ h4 {
   padding: 18px;
 }
 
+.human-check-panel {
+  border: 2px solid var(--amber);
+  border-radius: 8px;
+  background: var(--amber-soft);
+  padding: 22px;
+}
+
+.human-check-panel h3 {
+  margin-top: 8px;
+  color: var(--amber);
+  font-size: 26px;
+}
+
+.human-check-panel > p:not(.panel-label),
+.human-check-panel details,
+.human-check-panel dl {
+  margin-top: 14px;
+}
+
+.human-check-panel dl > div {
+  display: flex;
+  gap: 10px;
+}
+
+.human-check-panel dt {
+  color: var(--muted);
+}
+
+.human-check-panel dd {
+  margin: 0;
+}
+
+.human-check-panel pre {
+  margin: 8px 0 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.stripped-span + .stripped-span,
+.human-check-applicant + .human-check-applicant {
+  margin-top: 14px;
+}
+
+.human-check-applicant > h4 {
+  margin-bottom: 8px;
+}
+
 .argument-panel h2 {
   margin-top: 10px;
   font-size: 22px;

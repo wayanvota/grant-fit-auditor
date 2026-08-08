@@ -1,6 +1,7 @@
 import Ajv from "ajv";
+import { humanCheckSchema, isHumanCheckResult } from "./humanCheck.js";
 
-export const auditSchema = {
+export const auditProviderSchema = {
   type: "object",
   additionalProperties: false,
   required: [
@@ -109,14 +110,13 @@ export const auditSchema = {
 };
 
 const ajv = new Ajv({ allErrors: true });
-const validate = ajv.compile(auditSchema);
 
 const citationProperties = {
   source_citation: { type: "string", minLength: 1 },
   source_quote: { type: "string", minLength: 1 }
 };
 
-export const funderCriteriaSchema = {
+export const funderCriteriaProviderSchema = {
   type: "object",
   additionalProperties: false,
   required: ["criteria_extracted", "warnings"],
@@ -143,7 +143,7 @@ export const funderCriteriaSchema = {
   }
 };
 
-export const funderApplicantSchema = {
+export const funderApplicantProviderSchema = {
   type: "object",
   additionalProperties: false,
   required: [
@@ -249,23 +249,58 @@ export const funderApplicantSchema = {
   }
 };
 
+export const auditSchema = {
+  oneOf: [auditProviderSchema, humanCheckSchema]
+};
+
+export const funderCriteriaSchema = {
+  oneOf: [funderCriteriaProviderSchema, humanCheckSchema]
+};
+
+export const funderApplicantSchema = {
+  oneOf: [funderApplicantProviderSchema, humanCheckSchema]
+};
+
+const validate = ajv.compile(auditSchema);
 const validateFunderCriteria = ajv.compile(funderCriteriaSchema);
 const validateFunderApplicant = ajv.compile(funderApplicantSchema);
+const validateAuditProvider = ajv.compile(auditProviderSchema);
+const validateFunderCriteriaProvider = ajv.compile(funderCriteriaProviderSchema);
+const validateFunderApplicantProvider = ajv.compile(funderApplicantProviderSchema);
 
 export function assertAuditResult(result) {
   if (!validate(result)) {
     const detail = ajv.errorsText(validate.errors, { separator: "; " });
-    const error = new Error(`Provider returned invalid audit JSON: ${detail}`);
-    error.publicMessage = "The AI provider returned a response that did not match the audit schema.";
-    error.statusCode = 502;
-    throw error;
+    throw schemaValidationError(
+      `Provider returned invalid audit JSON: ${detail}`,
+      "The AI provider returned a response that did not match the audit schema.",
+      detail
+    );
   }
   return result;
+}
+
+export function assertAuditProviderResult(result) {
+  return assertSchemaResult(
+    validateAuditProvider,
+    result,
+    "audit",
+    "The AI provider returned a response that did not match the audit schema."
+  );
 }
 
 export function assertFunderCriteriaResult(result) {
   return assertSchemaResult(
     validateFunderCriteria,
+    result,
+    "criteria extraction",
+    "The AI provider returned criteria that did not match the funder audit schema."
+  );
+}
+
+export function assertFunderCriteriaProviderResult(result) {
+  return assertSchemaResult(
+    validateFunderCriteriaProvider,
     result,
     "criteria extraction",
     "The AI provider returned criteria that did not match the funder audit schema."
@@ -280,6 +315,19 @@ export function assertFunderApplicantResult(result, { criteriaExtracted = [] } =
     "The AI provider returned applicant triage data that did not match the funder audit schema."
   );
 
+  if (!isHumanCheckResult(validated)) {
+    assertFunderWorkflowRules(validated, criteriaExtracted);
+  }
+  return validated;
+}
+
+export function assertFunderApplicantProviderResult(result, { criteriaExtracted = [] } = {}) {
+  const validated = assertSchemaResult(
+    validateFunderApplicantProvider,
+    result,
+    "applicant triage",
+    "The AI provider returned applicant triage data that did not match the funder audit schema."
+  );
   assertFunderWorkflowRules(validated, criteriaExtracted);
   return validated;
 }
@@ -287,10 +335,11 @@ export function assertFunderApplicantResult(result, { criteriaExtracted = [] } =
 function assertSchemaResult(validator, result, label, publicMessage) {
   if (!validator(result)) {
     const detail = ajv.errorsText(validator.errors, { separator: "; " });
-    const error = new Error(`Provider returned invalid ${label} JSON: ${detail}`);
-    error.publicMessage = publicMessage;
-    error.statusCode = 502;
-    throw error;
+    throw schemaValidationError(
+      `Provider returned invalid ${label} JSON: ${detail}`,
+      publicMessage,
+      detail
+    );
   }
   return result;
 }
@@ -342,8 +391,18 @@ function assertFunderWorkflowRules(result, criteriaExtracted) {
 }
 
 function throwFunderPolicyError(detail) {
-  const error = new Error(`Provider returned invalid applicant triage JSON: ${detail}`);
-  error.publicMessage = "The AI provider returned applicant triage data that violated reviewer safeguards.";
+  throw schemaValidationError(
+    `Provider returned invalid applicant triage JSON: ${detail}`,
+    "The AI provider returned applicant triage data that violated reviewer safeguards.",
+    detail
+  );
+}
+
+function schemaValidationError(message, publicMessage, detail) {
+  const error = new Error(message);
+  error.publicMessage = publicMessage;
   error.statusCode = 502;
-  throw error;
+  error.code = "SCHEMA_VALIDATION_FAILED";
+  error.validationDetail = detail;
+  return error;
 }
