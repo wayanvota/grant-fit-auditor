@@ -1,1 +1,48 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>About Grant Fit Auditor</title><meta name="description" content="How Grant Fit Auditor supports nonprofit grant decisions."><link rel="stylesheet" href="styles.css"></head><body><header><a class="brand" href="index.html">Grant Fit Auditor</a><nav><a href="index.html">Home</a><a href="https://grant-fit-auditor.onrender.com/">Auditor</a><a aria-current="page" href="about.html">About</a></nav></header><main><section class="hero"><p class="label">About</p><h1>A decision tool, with visible limits.</h1><p class="lede">The auditor turns supplied opportunity text and organization facts into a cited triage brief. It can decline on explicit disqualifiers, pause for material closeable gaps, pursue when the supplied evidence is clean, or require a human check when evidence cannot support a judgment.</p></section><section class="grid"><article><h2>Evidence before confidence</h2><p>Hard stops retain exact quotes and source sections. Filing figures retain their tax year and source. Missing application volume stays missing.</p></article><article><h2>No stored profiles</h2><p>The application uses no database and does not retain submitted profiles, calls, or results.</p></article><article><h2>People decide</h2><p>The output supports staff triage. It does not certify eligibility, verify internal evidence, or replace leadership judgment.</p></article></section><div class="actions"><a class="button" href="https://grant-fit-auditor.onrender.com/">Open the auditor</a></div></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>About Grant Fit Auditor</title>
+  <meta name="description" content="How Grant Fit Auditor supports nonprofit grant decisions and handles submitted information.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="index.html">Grant Fit Auditor</a>
+    <nav><a href="index.html">Home</a><a href="https://grant-fit-auditor.onrender.com/">Auditor</a><a aria-current="page" href="about.html">About</a></nav>
+  </header>
+  <main>
+    <section class="hero">
+      <p class="label">About</p>
+      <h1>A decision tool, with visible limits.</h1>
+      <p class="lede">The auditor turns supplied opportunity text and organization facts into a cited triage brief. It can decline on explicit disqualifiers, pause for material closeable gaps, pursue when the supplied evidence is clean, or require a human check when evidence cannot support a judgment.</p>
+    </section>
+
+    <section class="grid">
+      <article><h2>Evidence before confidence</h2><p>Hard stops retain exact quotes and source sections. Filing figures retain their tax year and source. Missing application volume stays missing.</p></article>
+      <article><h2>No stored profiles</h2><p>The application uses no database and does not retain submitted profiles, calls, or results.</p></article>
+      <article><h2>People decide</h2><p>The output supports staff triage. It does not certify eligibility, verify internal evidence, or replace leadership judgment.</p></article>
+    </section>
+
+    <section class="detail-grid" aria-label="Data handling and designer">
+      <article aria-labelledby="data-handling-heading">
+        <p class="label">Data-handling posture</p>
+        <h2 id="data-handling-heading">What happens to what you paste?</h2>
+        <p>Grant Fit Auditor does not create accounts or write submitted text, organization profiles, or results to a database. For each audit, the application sends the material you provide to OpenAI's API, receives the assessment, and returns it to your browser. The application requests that OpenAI not store the response as application state.</p>
+        <p><a href="https://platform.openai.com/docs/models/default-usage-policies-by-endpoint">OpenAI states that API data is not used to train its models unless the customer explicitly opts in</a>. Under OpenAI's standard API controls, abuse-monitoring logs may contain prompts and responses and are retained for up to 30 days, unless the law requires longer retention. OpenAI offers different controls to eligible, approved customers.</p>
+        <p>This application's code does not intentionally write pasted text or results to its logs. The hosting service may still record ordinary operational metadata, such as request timing, status, and errors. Treat this as an external service. Do not paste anything you would not send to a vendor by email. Summarize unpublished applicant material, personal information, or content covered by a confidentiality obligation.</p>
+      </article>
+
+      <article aria-labelledby="designer-heading">
+        <p class="label">Designer</p>
+        <h2 id="designer-heading">Designed by Wayan Vota</h2>
+        <p><a href="https://wayan.com/">Wayan Vota</a> designed Grant Fit Auditor as a practical test of grant discipline. He defined the problem, the four recommendation states, the evidence requirements, and the points where automated analysis must stop for human review.</p>
+        <p>Wayan directed the product design, testing, and release. OpenAI Codex was used to implement the application under his direction. The tool's structure and limits reflect his design choices, not a recommendation from the analysis provider.</p>
+      </article>
+    </section>
+
+    <div class="actions"><a class="button" href="https://grant-fit-auditor.onrender.com/">Open the auditor</a></div>
+  </main>
+</body>
+</html>

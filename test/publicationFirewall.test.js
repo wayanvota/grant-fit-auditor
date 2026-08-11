@@ -31,3 +31,18 @@ test("the public interface has one applicant workflow and no vendor labels", () 
   assert.match(html, /Should this opportunity get staff time/);
   assert.match(html, /Human authority/);
 });
+
+test("both About pages disclose data handling and identify the designer", () => {
+  for (const file of ["public/about.html", "wayan-grant-fit-auditor/about.html"]) {
+    const html = fs.readFileSync(path.join(repoRoot, file), "utf8");
+    assert.match(html, /What happens to what you paste\?/);
+    assert.match(html, /retained for up to 30 days/);
+    assert.match(html, /does not intentionally write pasted text or results to its logs/);
+    assert.match(html, /Designed by Wayan Vota/);
+  }
+});
+
+test("OpenAI requests disable response application-state storage", () => {
+  const source = fs.readFileSync(path.join(repoRoot, "src", "providers", "openai.js"), "utf8");
+  assert.match(source, /store:\s*false/);
+});

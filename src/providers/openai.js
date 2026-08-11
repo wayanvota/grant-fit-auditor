@@ -38,6 +38,7 @@ async function runOpenAiStructured({
   try {
     response = await openai.responses.create({
       model,
+      store: false,
       prompt_cache_key: cacheKey,
       input: [
         {

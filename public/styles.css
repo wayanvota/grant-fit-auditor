@@ -40,6 +40,12 @@ input:focus,select:focus,textarea:focus { outline:3px solid color-mix(in srgb,va
 .result-card li { padding:16px 0; border-top:1px solid var(--oat); }
 .result-card li:first-child { padding-top:0; border-top:0; }
 .result-card p { line-height:1.5; }
+.about-page { max-width:1080px; }
+.about-section { margin-top:28px; padding:clamp(24px,4vw,42px); }
+.about-section h2 { font-size:clamp(30px,3.4vw,46px); }
+.about-section h2 + p { margin-top:22px; }
+.about-section a { color:var(--ink); text-decoration-color:var(--orange); text-underline-offset:3px; }
+.about-section .eyebrow { margin-bottom:12px; }
 .result-card q { display:block; padding:10px 12px; background:var(--cream); font-family:Georgia,serif; line-height:1.45; }
 .result-card small { display:block; margin-top:7px; color:var(--muted); }
 .item-head { display:flex; justify-content:space-between; gap:14px; }
