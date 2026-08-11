@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyzeAnnouncement, analyzeDurability, buildAuditResult, calculateEntryCost } from "../src/decision.js";
+import { analyzeAnnouncement, analyzeDurability, buildAuditResult, calculateEntryCost, isSupportedFitGap } from "../src/decision.js";
 import { normalizeIrsResponse } from "../src/irs990.js";
 
 const facts = { renewal_statement: "not_stated", renewal_quote: null, application_volume: null, awards_available: null, award_amount: null, announcement_date: null, announcement_source_url: null };
@@ -56,4 +56,15 @@ test("workflow 6: an undated deadline and uncloseable competition do not block a
   };
   assert.equal(buildAuditResult({ extraction }).recommendation, "PURSUE");
   assert.equal(analyzeAnnouncement({ ...facts, announcement_date: "October 1" }, filing(), "example.org").status, "not_calculable");
+});
+
+test("workflow 7: silence about ordinary application documents does not create a fit gap", () => {
+  assert.equal(isSupportedFitGap({
+    evidence: "The organization facts do not explicitly confirm that a narrative and project budget are prepared.",
+    next_step: "Prepare the ordinary attachments."
+  }), false);
+  assert.equal(isSupportedFitGap({
+    evidence: "The organization states that final audited statements are unavailable today but its auditor can issue them next week.",
+    next_step: "Obtain the final audit before submission."
+  }), true);
 });

@@ -6,6 +6,8 @@ export const HUMAN_CHECK_REASON_CODES = Object.freeze({
   VALIDATION_FAILED_AFTER_STRIP: "validation_failed_after_strip",
   SCHEMA_FAILED_AFTER_RETRY: "schema_failed_after_retry",
   TIMEOUT: "timeout",
+  SOURCE_QUALITY_FAILED: "source_quality_failed",
+  PROVIDER_REFUSAL: "provider_refusal",
   FUNDER_IDENTITY_UNRESOLVED: "funder_identity_unresolved",
   FILING_LOOKUP_FAILED: "filing_lookup_failed"
 });
@@ -50,6 +52,7 @@ export const humanCheckSchema = {
               "injection_detected",
               "span_stripped",
               "input_revalidated",
+              "source_quality_failed",
               "provider_audit_completed",
               "schema_retry",
               "human_check_returned"

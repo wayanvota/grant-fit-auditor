@@ -12,7 +12,19 @@ import { HUMAN_CHECK_REASON_CODES, createHumanCheckResult, isHumanCheckResult } 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 12 * 1024 * 1024, fieldSize: 150000, fields: 20, files: 1, parts: 22 },
+  fileFilter: (_req, file, callback) => {
+    if (file.mimetype !== "application/pdf") {
+      const error = new Error("Only PDF opportunity files are accepted.");
+      error.publicMessage = "Only text-based PDF files can be uploaded.";
+      error.statusCode = 400;
+      return callback(error);
+    }
+    callback(null, true);
+  }
+});
 const port = process.env.PORT || 3000;
 const host = process.env.HOST || "0.0.0.0";
 const canonicalWebUrl = process.env.CANONICAL_WEB_URL || "https://wayan.com/grant-fit-auditor/";
@@ -91,7 +103,12 @@ export async function handleAudit(req, res) {
 }
 
 app.use((error, _req, res, _next) => {
-  if (error?.name === "MulterError") return res.status(400).json({ error: "The uploaded file was not accepted." });
+  if (error?.name === "MulterError") {
+    const message = error.code === "LIMIT_FIELD_VALUE"
+      ? "A submitted text field was too large. Shorten it and try again."
+      : "The uploaded file was not accepted.";
+    return res.status(400).json({ error: message });
+  }
   res.status(error.statusCode || 500).json({ error: error.publicMessage || "Request failed." });
 });
 
@@ -127,7 +144,7 @@ function organizationFrom(body) {
     legal_name: String(body.legalName || "").trim(),
     ein: String(body.organizationEin || "").trim() || null,
     annual_budget: numberOrNull(body.annualBudget),
-    is_501c3: body.is501c3 === "yes" ? true : body.is501c3 === "no" ? false : null,
+    is_501c3: body.is501c3 === "yes" ? true : body.is501c3 === "no" ? false : body.is501c3 === "unknown" ? "unknown" : null,
     states: String(body.states || "").trim(),
     program_areas: String(body.programAreas || "").trim(),
     structure: String(body.structure || "standalone"),

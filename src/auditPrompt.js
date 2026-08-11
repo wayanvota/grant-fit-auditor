@@ -11,6 +11,8 @@ Rules:
 - Quote the opportunity exactly and cite its numbered section for every hard stop.
 - Mark a hard stop ambiguous when the supplied organization facts cannot establish pass or fail.
 - Identify only closeable competitiveness gaps explicitly tied to the opportunity and rank them high, medium, or low. Every returned gap must have closeable=true.
+- Return a fit gap only when the organization facts affirmatively show that the gap exists. Never infer a gap because the profile is silent or does not explicitly confirm that an ordinary application document is ready.
+- A narrative, application budget, leadership list, evaluation plan, attachment, or similar submission item is not a fit gap by itself. Treat it as a gap only when the organization facts explicitly say it cannot currently provide a required item and the deficiency can be cured.
 - Do not return competition rate, award odds, optional organization EINs, or facts already satisfied by the organization as fit gaps.
 - Extract application volume, number of awards, award amount, renewal language, announcement date, and announcement URL only when explicitly supplied. Use null when absent. Never estimate.
 - Announcement date means a dated official announcement that created or expanded the funding opportunity. Never copy an application deadline into announcement_date. Return dates only as YYYY-MM-DD; otherwise use null.

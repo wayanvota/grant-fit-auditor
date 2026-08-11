@@ -60,3 +60,24 @@ test("a funder name without an EIN returns a human-check result before provider 
   assert.equal(payload.result.state, "NEEDS HUMAN CHECK");
   assert.equal(payload.result.reason_code, "funder_identity_unresolved");
 });
+
+test("unknown tax status offered by the UI reaches a human-check path", async () => {
+  let statusCode = 200;
+  let payload;
+  const response = { status(code) { statusCode = code; return this; }, json(body) { payload = body; return this; } };
+  await handleAudit({
+    body: {
+      rfpText: "asdf qwer zxcv grant money ".repeat(40),
+      legalName: "Example Community Services",
+      annualBudget: "1200000",
+      is501c3: "unknown",
+      states: "Michigan",
+      programAreas: "Workforce development",
+      structure: "standalone",
+      ngoProfile: "The organization has an unresolved tax-status question and needs a person to verify its current determination."
+    },
+    file: undefined
+  }, response);
+  assert.equal(statusCode, 200);
+  assert.equal(payload.result.reason_code, "source_quality_failed");
+});

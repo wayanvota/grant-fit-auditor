@@ -3,7 +3,8 @@ import { assessFilingUsability, filingLine, filingLines, FILING_REVIEW_STATES } 
 export function buildAuditResult({ extraction, filingRecord, staffCostPerHour, officialFunderDomain }) {
   const failed = extraction.hard_stops.filter((item) => item.status === "fail");
   const ambiguous = extraction.hard_stops.filter((item) => item.status === "ambiguous" && item.category !== "deadline");
-  const materialGaps = extraction.fit_gaps.filter((item) => item.closeable && (item.severity === "high" || item.severity === "medium"));
+  const supportedGaps = extraction.fit_gaps.filter(isSupportedFitGap);
+  const materialGaps = supportedGaps.filter((item) => item.closeable && (item.severity === "high" || item.severity === "medium"));
   const durability = analyzeDurability(filingRecord, extraction.opportunity_facts);
   const entryCost = calculateEntryCost(extraction.opportunity_facts, staffCostPerHour);
   const announcementCheck = analyzeAnnouncement(extraction.opportunity_facts, filingRecord, officialFunderDomain);
@@ -25,13 +26,19 @@ export function buildAuditResult({ extraction, filingRecord, staffCostPerHour, o
     recommendation,
     decision_reason: decisionReason,
     hard_stops: extraction.hard_stops,
-    fit_gaps: extraction.fit_gaps.filter((item) => item.closeable),
+    fit_gaps: supportedGaps.filter((item) => item.closeable),
     durability,
     entry_cost: entryCost,
     announcement_check: announcementCheck,
     human_review: "A staff person must verify eligibility, source accuracy, organizational evidence, and the final go or no-go choice.",
     warnings: extraction.warnings
   };
+}
+
+export function isSupportedFitGap(gap) {
+  const evidence = `${gap?.evidence || ""} ${gap?.next_step || ""}`.toLowerCase();
+  const absenceInference = /(?:organization (?:facts|profile) do(?:es)? not|supplied (?:facts|profile) do(?:es)? not|not explicitly (?:state|confirm|mention)|no evidence (?:was|is) supplied|cannot be confirmed from the provided|only .* (?:is|are) mentioned)/;
+  return !absenceInference.test(evidence);
 }
 
 export function analyzeDurability(record, facts) {

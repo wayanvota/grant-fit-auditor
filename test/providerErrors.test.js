@@ -26,3 +26,12 @@ test("provider API keys are redacted from fallback errors", () => {
   assert.match(wrapped.publicMessage, /\[redacted-api-key\]/);
   assert.doesNotMatch(wrapped.publicMessage, /sk-ant-secret123/);
 });
+
+test("provider HTTP 403 is classified as a refusal for human review", () => {
+  const rawError = new Error("Request was rejected by the safety system");
+  rawError.status = 403;
+  const wrapped = publicProviderError("Analysis engine", rawError);
+  assert.equal(wrapped.code, "PROVIDER_REFUSAL");
+  assert.equal(wrapped.statusCode, 403);
+  assert.match(wrapped.publicMessage, /person must review/i);
+});

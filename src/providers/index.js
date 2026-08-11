@@ -1,14 +1,14 @@
 import { assertAuditProviderResult } from "../auditSchema.js";
 import { HUMAN_CHECK_REASON_CODES, createHumanCheckResult } from "../humanCheck.js";
-import { containsInjection, inspectAndStripInjection } from "../inputSafeguards.js";
+import { assessOpportunityTextQuality, containsInjection, inspectAndStripInjection } from "../inputSafeguards.js";
 import { runAnthropicAudit } from "./anthropic.js";
 import { runOpenAiAudit } from "./openai.js";
 
 export async function runAudit({ provider, rfpText, organization }) {
-  const prepared = prepareInputs([
-    { source: "opportunity_text", text: rfpText, minimum: 500 },
-    { source: "organization_profile", text: JSON.stringify(organization), minimum: 80 }
-  ]);
+  const opportunity = prepareInputs([{ source: "opportunity_text", text: rfpText, minimum: 500, assessQuality: true }]);
+  if (opportunity.terminalResult) return providerResult(provider, opportunity.terminalResult);
+  const organizationInput = prepareOrganization(organization);
+  const prepared = combinePrepared(opportunity, organizationInput);
   if (prepared.terminalResult) return providerResult(provider, prepared.terminalResult);
   return runValidatedProvider({
     provider,
@@ -44,6 +44,17 @@ export async function runValidatedProvider({ provider, providerFunctions, input,
       return { ...lastResponse, result: validated };
     } catch (error) {
       if (error?.code === "PROVIDER_TIMEOUT") return { ...(lastResponse || {}), provider: lastResponse?.provider || normalizeProvider(provider), result: timeoutResult(safeguard.operationLog) };
+      if (error?.code === "PROVIDER_REFUSAL") {
+        return {
+          ...(lastResponse || {}),
+          provider: lastResponse?.provider || normalizeProvider(provider),
+          result: createHumanCheckResult({
+            reasonCode: HUMAN_CHECK_REASON_CODES.PROVIDER_REFUSAL,
+            explanation: "The analysis engine declined to process this input. A person must review it manually.",
+            operationLog: [...safeguard.operationLog, operation("human_check_returned", "provider", "The provider declined the request without returning an audit judgment.")]
+          })
+        };
+      }
       if (error?.code !== "SCHEMA_VALIDATION_FAILED") throw error;
       validationError = String(error.validationDetail || error.message).slice(0, 1000);
       if (attempt === 0 && deadline - Date.now() > 0) {
@@ -86,14 +97,68 @@ export function prepareInputs(inputs) {
     if (inspected.strippedSpans.length && containsInjection(inspected.text)) {
       return { values, strippedSpans, operationLog, terminalResult: createHumanCheckResult({ reasonCode: HUMAN_CHECK_REASON_CODES.VALIDATION_FAILED_AFTER_STRIP, explanation: "The input still contained model-control text after the single permitted strip pass.", strippedSpans, operationLog: [...operationLog, operation("human_check_returned", input.source, "A second safeguard pass was refused.")] }) };
     }
+    if (input.assessQuality) {
+      const quality = assessOpportunityTextQuality(inspected.text);
+      if (!quality.ok) {
+        return {
+          values,
+          strippedSpans,
+          operationLog,
+          terminalResult: createHumanCheckResult({
+            reasonCode: HUMAN_CHECK_REASON_CODES.SOURCE_QUALITY_FAILED,
+            explanation: `${quality.reason} A person must confirm the source before an audit can be trusted.`,
+            strippedSpans,
+            operationLog: [...operationLog, operation("source_quality_failed", input.source, quality.reason)]
+          })
+        };
+      }
+    }
   }
   return { values, strippedSpans, operationLog };
+}
+
+export function prepareOrganization(organization) {
+  const cleaned = {};
+  const strippedSpans = [];
+  const operationLog = [];
+  for (const [key, value] of Object.entries(organization || {})) {
+    if (typeof value !== "string") {
+      cleaned[key] = value;
+      continue;
+    }
+    const inspected = inspectAndStripInjection(value, { source: `organization_profile.${key}` });
+    cleaned[key] = inspected.text;
+    strippedSpans.push(...inspected.strippedSpans);
+    operationLog.push(...inspected.operationLog);
+    if (inspected.strippedSpans.length && containsInjection(inspected.text)) {
+      return {
+        values: { organization_profile: JSON.stringify(cleaned) },
+        strippedSpans,
+        operationLog,
+        terminalResult: createHumanCheckResult({
+          reasonCode: HUMAN_CHECK_REASON_CODES.VALIDATION_FAILED_AFTER_STRIP,
+          explanation: "An organization field still contained model-control text after the single permitted strip pass.",
+          strippedSpans,
+          operationLog: [...operationLog, operation("human_check_returned", `organization_profile.${key}`, "A second safeguard pass was refused.")]
+        })
+      };
+    }
+  }
+  return { values: { organization_profile: JSON.stringify(cleaned) }, strippedSpans, operationLog };
 }
 
 function timeoutResult(operationLog) {
   return createHumanCheckResult({ reasonCode: HUMAN_CHECK_REASON_CODES.TIMEOUT, explanation: "The audit did not finish within the request time limit. A person must review the input manually.", operationLog: [...operationLog, operation("human_check_returned", "provider", "The provider time budget expired before a valid result was available.")] });
 }
 function emptySafeguard() { return { strippedSpans: [], operationLog: [] }; }
+function combinePrepared(...prepared) {
+  return prepared.reduce((combined, item) => ({
+    values: { ...combined.values, ...item.values },
+    strippedSpans: [...combined.strippedSpans, ...item.strippedSpans],
+    operationLog: [...combined.operationLog, ...item.operationLog],
+    terminalResult: combined.terminalResult || item.terminalResult
+  }), { values: {}, strippedSpans: [], operationLog: [], terminalResult: null });
+}
 function providerResult(provider, result) { return { provider: normalizeProvider(provider), result }; }
 function normalizeProvider(provider) { return provider === "chatgpt" ? "openai" : provider === "claude" ? "anthropic" : provider; }
 function analysisTimeoutMs() { const configured = Number(process.env.ANALYSIS_TIMEOUT_MS || 90000); return Number.isFinite(configured) && configured > 0 ? configured : 90000; }

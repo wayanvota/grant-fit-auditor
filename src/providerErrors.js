@@ -28,6 +28,15 @@ export function publicProviderError(providerName, error) {
     });
   }
 
+  if (error?.status === 403 || error?.statusCode === 403) {
+    return wrappedProviderError({
+      providerName,
+      publicMessage: `${providerName} declined to process this input. A person must review it manually.`,
+      statusCode: 403,
+      code: "PROVIDER_REFUSAL"
+    });
+  }
+
   const publicMessage = message
     ? `${providerName} error: ${sanitizeProviderMessage(message)}`
     : `${providerName} returned an error. Check the model name and API key.`;
