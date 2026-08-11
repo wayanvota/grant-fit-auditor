@@ -107,7 +107,7 @@ export function analyzeAnnouncement(facts, filingRecord, officialFunderDomain) {
 }
 
 function validDate(value) {
-  if (!value) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }

@@ -55,4 +55,5 @@ test("workflow 6: an undated deadline and uncloseable competition do not block a
     fit_gaps: [{ gap: "Competition rate", severity: "high", closeable: false, evidence: "Eight awards are available.", next_step: "None" }]
   };
   assert.equal(buildAuditResult({ extraction }).recommendation, "PURSUE");
+  assert.equal(analyzeAnnouncement({ ...facts, announcement_date: "October 1" }, filing(), "example.org").status, "not_calculable");
 });

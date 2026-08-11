@@ -13,6 +13,7 @@ Rules:
 - Identify only closeable competitiveness gaps explicitly tied to the opportunity and rank them high, medium, or low. Every returned gap must have closeable=true.
 - Do not return competition rate, award odds, optional organization EINs, or facts already satisfied by the organization as fit gaps.
 - Extract application volume, number of awards, award amount, renewal language, announcement date, and announcement URL only when explicitly supplied. Use null when absent. Never estimate.
+- Announcement date means a dated official announcement that created or expanded the funding opportunity. Never copy an application deadline into announcement_date. Return dates only as YYYY-MM-DD; otherwise use null.
 - A statement that funding will not recur is one_time. A statement that applications recur or renewal is possible is recurring. Otherwise use not_stated.
 - Do not recommend, score, rank, or make a funding decision.
 
