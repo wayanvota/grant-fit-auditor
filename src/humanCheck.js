@@ -5,7 +5,9 @@ export const HUMAN_CHECK_REASON_CODES = Object.freeze({
   INSUFFICIENT_CONTENT_AFTER_STRIP: "insufficient_content_after_strip",
   VALIDATION_FAILED_AFTER_STRIP: "validation_failed_after_strip",
   SCHEMA_FAILED_AFTER_RETRY: "schema_failed_after_retry",
-  TIMEOUT: "timeout"
+  TIMEOUT: "timeout",
+  FUNDER_IDENTITY_UNRESOLVED: "funder_identity_unresolved",
+  FILING_LOOKUP_FAILED: "filing_lookup_failed"
 });
 
 export const humanCheckReasonCodeValues = Object.freeze(

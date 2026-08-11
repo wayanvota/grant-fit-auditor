@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "check:forbidden": "node --test test/publicationFirewall.test.js",
+    "check": "npm run check:forbidden && npm test"
   },
   "engines": {
     "node": ">=20"

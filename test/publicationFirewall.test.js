@@ -5,70 +5,29 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const testDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(testDir, "..");
-const textExtensions = new Set([
-  "",
-  ".css",
-  ".example",
-  ".html",
-  ".js",
-  ".json",
-  ".md",
-  ".txt",
-  ".yaml",
-  ".yml"
-]);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const forbidden = [
+  ["Mac", "Arthur"], ["100", "&", "Change"], ["100", " and ", "Change"],
+  ["Lever", " for ", "Change"], ["Mc", "Govern"], ["Patrick J. ", "Mc", "Govern"], ["Intele", "health"]
+].map((parts) => parts.join(""));
 
-function textFiles(directory) {
-  const output = [];
-  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-    if ([".git", "node_modules", "upload-packages"].includes(entry.name)) continue;
-    if (
-      entry.name.startsWith(".") &&
-      ![".env.example", ".gitattributes", ".gitignore"].includes(entry.name)
-    ) {
-      continue;
-    }
-    const fullPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) {
-      output.push(...textFiles(fullPath));
-    } else if (textExtensions.has(path.extname(entry.name))) {
-      output.push(fullPath);
-    }
-  }
-  return output;
-}
-
-test("Wednesday publication firewall excludes embargoed funder references", () => {
-  const terms = [
-    ["Mac", "Arthur"].join(""),
-    ["100", "&", "Change"].join(""),
-    ["100", " and ", "Change"].join(""),
-    ["Lever", " for ", "Change"].join("")
-  ];
-  const repoText = textFiles(repoRoot)
-    .map((file) => fs.readFileSync(file, "utf8"))
-    .join("\n");
-  const commitMessages = execFileSync(
-    "git",
-    ["log", "--all", "--format=%B"],
-    { cwd: repoRoot, encoding: "utf8" }
-  );
-
-  for (const term of terms) {
-    assert.doesNotMatch(repoText, new RegExp(term, "i"));
-    assert.doesNotMatch(commitMessages, new RegExp(term, "i"));
+test("forbidden references are absent from tracked files and history", () => {
+  const files = execFileSync("git", ["ls-files", "-co", "--exclude-standard", "-z"], { cwd: repoRoot })
+    .toString().split("\0").filter(Boolean);
+  const text = files.map((file) => {
+    try { return fs.readFileSync(path.join(repoRoot, file), "utf8"); } catch { return ""; }
+  }).join("\n");
+  const history = execFileSync("git", ["log", "--all", "--format=%B"], { cwd: repoRoot, encoding: "utf8" });
+  for (const term of forbidden) {
+    assert.doesNotMatch(text, new RegExp(term, "i"));
+    assert.doesNotMatch(history, new RegExp(term, "i"));
   }
 });
 
-test("the named AI provider remains an engine only", () => {
-  const subjectName = ["OpenAI", " Foundation"].join("");
-  const repoText = textFiles(repoRoot)
-    .map((file) => fs.readFileSync(file, "utf8"))
-    .join("\n");
-
-  assert.doesNotMatch(repoText, new RegExp(subjectName, "i"));
-  assert.match(repoText, /value="openai"/);
-  assert.match(repoText, />ChatGPT</);
+test("the public interface has one applicant workflow and no vendor labels", () => {
+  const html = fs.readFileSync(path.join(repoRoot, "public", "index.html"), "utf8");
+  const js = fs.readFileSync(path.join(repoRoot, "public", "app.js"), "utf8");
+  assert.doesNotMatch(`${html}\n${js}`, /ChatGPT|Claude|provider|reviewer/i);
+  assert.match(html, /Should this opportunity get staff time/);
+  assert.match(html, /Human authority/);
 });

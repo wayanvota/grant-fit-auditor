@@ -4,268 +4,84 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Grant Fit Auditor</title>
-    <meta name="description" content="Apply to fewer grants. Review the right ones.">
+    <meta name="description" content="Decide whether a grant opportunity deserves staff time.">
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main class="app-shell">
-      <header class="site-header">
-        <nav class="top-nav" aria-label="Tool navigation">
-          <a href="https://wayan.com/grant-decider/index.html" rel="noreferrer">Home</a>
-          <a class="active" href="https://grant-fit-auditor.onrender.com/" aria-current="page">Auditor</a>
-          <a href="https://wayan.com/grant-decider/about.html" rel="noreferrer">About</a>
-          <span class="privacy-note">AI never sees private account data</span>
-        </nav>
-      </header>
+    <header class="site-header">
+      <a class="brand" href="/">Grant Fit Auditor</a>
+      <nav aria-label="Tool navigation">
+        <a aria-current="page" href="/">Auditor</a>
+        <a href="/about.html">About</a>
+      </nav>
+      <span class="privacy-note">No account or database</span>
+    </header>
 
+    <main>
       <section class="hero">
-        <div class="hero-copy">
-          <div>
-            <p class="eyebrow">Grant discipline, from both sides</p>
-            <h1>Grant Fit Auditor</h1>
-            <p class="lede">Apply to fewer grants. Review the right ones.</p>
-          </div>
-
-          <div class="mode-control-wrap">
-            <span class="panel-label">Mode</span>
-            <div class="mode-control" role="group" aria-label="Choose how you are using the auditor">
-              <button type="button" class="mode-button active" data-mode="applicant" aria-pressed="true">I am applying</button>
-              <button type="button" class="mode-button" data-mode="reviewer" aria-pressed="false">I am reviewing</button>
-            </div>
-          </div>
-
-          <aside id="heroArgument" class="argument-panel">
-            <p class="panel-label">Editorial argument</p>
-            <h2>Built to refuse, not to apply faster.</h2>
-            <p>Let people set strategy, then use AI to expose requirements and gaps before a team wastes weeks on a weak fit.</p>
-          </aside>
-
-          <aside id="reviewerBoundary" class="reviewer-boundary" hidden>
-            <p class="panel-label">What this tool will not do</p>
-            <ul>
-              <li><strong>It will not score or rank your applicants.</strong> It gives no number and no order of merit.</li>
-              <li><strong>It will not decide or recommend who to fund.</strong> A reviewer confirms every routing state.</li>
-              <li><strong>It will not apply criteria you did not publish.</strong> It reads only the criteria you provide.</li>
-              <li><strong>It will not tell you whether claims are true.</strong> Verification remains human work.</li>
-            </ul>
-          </aside>
-        </div>
+        <p class="eyebrow">Grant discipline before proposal momentum</p>
+        <h1>Should this opportunity get staff time?</h1>
+        <p class="lede">Check hard eligibility stops, closeable fit gaps, funder durability, application economics, and evidence timing in one review.</p>
       </section>
 
-      <section id="applicantWorkspace" class="workspace">
+      <section class="workspace">
         <form id="auditForm" class="input-panel">
-          <div class="panel-heading">
-            <div>
-              <p class="panel-label">Applicant-side audit</p>
-              <h2>Scenario inputs</h2>
-              <p>Paste guidelines, add a URL, or upload a text-based PDF.</p>
-            </div>
-            <button type="button" id="loadDemo" class="secondary-button">Load demo</button>
+          <div class="section-heading">
+            <p class="panel-label">01 / Organization</p>
+            <h2>State the facts the call can test.</h2>
           </div>
 
-          <div id="demoNote" class="demo-note" hidden>
-            The fictional SheConnects scenario is loaded. The proposal narrative stays human-written.
+          <div class="field-grid">
+            <label class="field wide"><span>Legal name *</span><input name="legalName" required></label>
+            <label class="field"><span>Organization EIN</span><input name="organizationEin" inputmode="numeric" placeholder="12-3456789"></label>
+            <label class="field"><span>Annual budget *</span><input name="annualBudget" type="number" min="0" required></label>
+            <label class="field"><span>501(c)(3) status *</span><select name="is501c3" required><option value="">Select</option><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select></label>
+            <label class="field"><span>States served *</span><input name="states" required placeholder="Michigan, Ohio"></label>
+            <label class="field wide"><span>Program areas *</span><input name="programAreas" required placeholder="Workforce development, maternal health"></label>
+            <label class="field wide"><span>Organization structure *</span><select name="structure" required><option value="standalone">Standalone nonprofit</option><option value="chapter">Local chapter with its own determination letter</option><option value="department">Department or center inside a larger institution</option><option value="fiscal_sponsor">Fiscally sponsored project</option></select></label>
+            <label class="field wide"><span>Relevant capacity and evidence</span><textarea name="ngoProfile" rows="5" placeholder="Describe the program, population, operating history, partnerships, results, and constraints relevant to this opportunity."></textarea></label>
           </div>
 
-          <fieldset class="provider-fieldset">
-            <legend>AI engine</legend>
-            <label>
-              <input type="radio" name="provider" value="anthropic" checked>
-              <span>Claude</span>
-            </label>
-            <label>
-              <input type="radio" name="provider" value="openai">
-              <span>ChatGPT</span>
-            </label>
-          </fieldset>
+          <div class="section-heading divider">
+            <p class="panel-label">02 / Opportunity</p>
+            <h2>Supply the complete call.</h2>
+          </div>
+          <label class="field"><span>Guidelines, eligibility criteria, and FAQ</span><textarea name="rfpText" rows="10" placeholder="Paste at least 500 characters."></textarea></label>
+          <div class="field-grid">
+            <label class="field wide"><span>Opportunity URL</span><input name="rfpUrl" type="url" placeholder="https://funder.org/opportunity"></label>
+            <label class="field wide"><span>Or upload a text-based PDF</span><input name="rfpPdf" type="file" accept="application/pdf"></label>
+          </div>
 
-          <label class="field">
-            <span>RFP or grant guidelines text</span>
-            <textarea id="rfpText" name="rfpText" rows="10" placeholder="Paste RFP text here."></textarea>
-          </label>
-
-          <label class="field">
-            <span>RFP URL</span>
-            <input id="rfpUrl" name="rfpUrl" type="url" placeholder="https://example.org/grant-guidelines">
-          </label>
-
-          <label class="field">
-            <span>Upload PDF</span>
-            <input id="rfpPdf" name="rfpPdf" type="file" accept="application/pdf">
-          </label>
-
-          <label class="field">
-            <span>NGO profile</span>
-            <textarea id="ngoProfile" name="ngoProfile" rows="10" placeholder="Mission, programs, budget size, geography, outcomes, and known gaps."></textarea>
-          </label>
+          <div class="section-heading divider">
+            <p class="panel-label">03 / Optional diligence</p>
+            <h2>Add filing and labor inputs.</h2>
+          </div>
+          <div class="field-grid">
+            <label class="field"><span>Funder legal name</span><input name="funderName"></label>
+            <label class="field"><span>Funder EIN</span><input name="funderEin" inputmode="numeric" placeholder="12-3456789"></label>
+            <label class="field"><span>Official funder domain</span><input name="officialFunderDomain" placeholder="funder.org"></label>
+            <label class="field"><span>Loaded staff cost per hour</span><input name="staffCostPerHour" type="number" min="1" step="1" placeholder="75"></label>
+          </div>
 
           <button type="submit" class="primary-button" id="submitButton">Run fit audit</button>
-          <p id="inlineProgress" class="inline-progress" hidden>
-            <strong id="inlineProgressTitle">Audit running:</strong>
-            <span id="inlineProgressMessage">Preparing audit.</span>
-            <span id="inlineProgressElapsed">0s</span>
-          </p>
-          <p class="fine-print">Your inputs are processed for this run only. No database is used.</p>
+          <p id="progress" class="progress" hidden>Checking the evidence. Keep this tab open.</p>
+          <p class="fine-print">Inputs are processed for this run only. The application stores no profiles or results.</p>
         </form>
 
         <section class="output-panel" aria-live="polite">
-          <div class="panel-heading">
-            <div>
-              <p class="panel-label">Decision brief</p>
-              <h2>Audit output</h2>
-              <p id="statusLine">Load the demo or add your own RFP and profile.</p>
-            </div>
-            <span id="providerBadge" class="provider-badge">Ready</span>
+          <div class="section-heading">
+            <p class="panel-label">Decision brief</p>
+            <h2 id="resultTitle">One recommendation, with evidence.</h2>
+            <p id="statusLine">Complete the form to produce a review.</p>
           </div>
-
-          <div id="emptyState" class="empty-state">
-            <p>Run an audit to see extracted requirements, eligibility pressure, inferred scoring, gaps, and a pursuit recommendation.</p>
-          </div>
-
-          <div id="progressPanel" class="progress-panel" hidden>
-            <div class="progress-topline">
-              <div>
-                <p class="panel-label">Audit in progress</p>
-                <p id="progressMessage">Preparing audit.</p>
-              </div>
-              <span id="progressElapsed">0s</span>
-            </div>
-            <div class="progress-bar" aria-hidden="true"><span></span></div>
-            <ol id="progressSteps" class="progress-steps">
-              <li>Reading RFP and NGO profile</li>
-              <li>Extracting mandatory requirements</li>
-              <li>Checking eligibility and scoring pressure</li>
-              <li>Ranking gaps</li>
-              <li>Waiting for provider response</li>
-            </ol>
-            <p class="progress-note">Long RFPs can take 60 to 120 seconds. Keep this tab open.</p>
-          </div>
-
           <div id="results" class="results" hidden></div>
-
-          <aside class="human-panel">
-            <p class="panel-label">What AI won't do here</p>
-            <ul>
-              <li>
-                <strong>Define what your organization will pursue or refuse.</strong>
-                <span>That is a leadership choice about mission discipline and opportunity cost.</span>
-              </li>
-              <li>
-                <strong>Surface missing requirements not stated in the RFP.</strong>
-                <span>Unwritten funder expectations require human judgment and relationship knowledge.</span>
-              </li>
-              <li>
-                <strong>Audit your evidence file for accuracy.</strong>
-                <span>The tool can compare text. It cannot certify whether your evidence is true.</span>
-              </li>
-            </ul>
+          <aside class="human-boundary">
+            <p class="panel-label">Human authority</p>
+            <p>A staff person must verify eligibility, source accuracy, organizational evidence, and the final go or no-go choice.</p>
           </aside>
         </section>
       </section>
-
-      <section id="reviewerWorkspace" class="workspace reviewer-workspace" hidden>
-        <form id="reviewerForm" class="input-panel">
-          <div class="panel-heading">
-            <div>
-              <p class="panel-label">Reviewer-side triage</p>
-              <h2>Published criteria and applicants</h2>
-              <p>Use one call and up to six fictional or consented applicant profiles.</p>
-            </div>
-            <button type="button" id="loadReviewerDemo" class="secondary-button">Load saved example</button>
-          </div>
-
-          <div id="reviewerDemoNote" class="demo-note" hidden>
-            Saved fictional Riverbend example loaded. The worklist renders instantly; use Run reviewer triage for a new live analysis.
-          </div>
-
-          <fieldset class="provider-fieldset">
-            <legend>AI engine</legend>
-            <label>
-              <input type="radio" name="provider" value="anthropic" checked>
-              <span>Claude</span>
-            </label>
-            <label>
-              <input type="radio" name="provider" value="openai">
-              <span>ChatGPT</span>
-            </label>
-          </fieldset>
-
-          <fieldset class="source-fieldset">
-            <legend>Published criteria source</legend>
-            <div class="source-tabs" role="group" aria-label="Criteria source type">
-              <button type="button" class="source-tab active" data-source="text" aria-pressed="true">Text</button>
-              <button type="button" class="source-tab" data-source="url" aria-pressed="false">URL</button>
-              <button type="button" class="source-tab" data-source="pdf" aria-pressed="false">PDF</button>
-            </div>
-
-            <label id="criteriaTextField" class="field">
-              <span>Published call or guidelines</span>
-              <textarea id="criteriaText" name="criteriaText" rows="7" placeholder="Paste the funder's published eligibility and scope criteria."></textarea>
-            </label>
-            <p class="batch-guidance">Include at least 250 readable characters so the tool has enough published context to distinguish eligibility from scope.</p>
-
-            <label id="criteriaUrlField" class="field" hidden>
-              <span>Criteria URL</span>
-              <input id="criteriaUrl" name="criteriaUrl" type="url" placeholder="https://example.org/open-call">
-            </label>
-
-            <label id="criteriaPdfField" class="field" hidden>
-              <span>Criteria PDF</span>
-              <input id="criteriaPdf" name="criteriaPdf" type="file" accept="application/pdf">
-            </label>
-          </fieldset>
-
-          <label class="field">
-            <span>Applicant set</span>
-            <textarea id="applicantSet" name="applicantSet" rows="8" placeholder="Applicant name&#10;Mission, geography, programs, scale, evidence, and gaps.&#10;&#10;---&#10;&#10;Next applicant name&#10;Profile details..."></textarea>
-          </label>
-          <p class="batch-guidance">Separate applicants with a line containing <code>---</code>. Each applicant is processed independently. A six-applicant run can take several minutes and uses one provider call per applicant, plus one criteria extraction call.</p>
-
-          <button type="submit" class="primary-button accent-button" id="reviewerSubmitButton">Run reviewer triage</button>
-          <p id="reviewerInlineProgress" class="inline-progress" hidden>
-            <strong>Reviewer triage running:</strong>
-            <span id="reviewerInlineMessage">Preparing criteria.</span>
-            <span id="reviewerInlineElapsed">0s</span>
-          </p>
-          <p class="fine-print">Criteria, applicants, and results stay in this browser session. Nothing is stored by the app.</p>
-        </form>
-
-        <section class="output-panel reviewer-output" aria-live="polite">
-          <div class="panel-heading worklist-heading">
-            <div>
-              <p class="panel-label">Reviewer worklist</p>
-              <h2>Triage order for reviewer attention</h2>
-              <p id="reviewerStatusLine">Load the fictional demo or enter a call and applicant set.</p>
-            </div>
-            <div class="output-actions">
-              <span id="reviewerProviderBadge" class="provider-badge">Ready</span>
-              <button type="button" id="exportCsv" class="secondary-button" hidden>Export CSV</button>
-              <button type="button" id="exportPdf" class="secondary-button" hidden>Export PDF</button>
-            </div>
-          </div>
-
-          <div id="reviewerEmptyState" class="empty-state">
-            <p>The worklist will surface cases needing human attention first, followed by clean routes to full review.</p>
-          </div>
-
-          <div id="reviewerProgressPanel" class="progress-panel" hidden>
-            <div class="progress-topline">
-              <div>
-                <p class="panel-label">Batch in progress</p>
-                <p id="reviewerProgressMessage">Extracting the published criteria once.</p>
-              </div>
-              <span id="reviewerProgressElapsed">0s</span>
-            </div>
-            <div class="progress-bar accent-progress" aria-hidden="true"><span></span></div>
-            <p class="progress-note">One applicant failure will not stop the rest of the batch.</p>
-          </div>
-
-          <div id="reviewerResults" class="reviewer-results" hidden></div>
-        </section>
-      </section>
     </main>
-    <script src="/demo.js"></script>
-    <script src="/reviewer-demo.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>
