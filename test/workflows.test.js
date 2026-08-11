@@ -15,7 +15,7 @@ function filing(overrides = {}, withoutData = []) {
 }
 
 test("workflow 1: an ineligible department inside a larger institution is declined", () => {
-  const result = buildAuditResult({ extraction: { ...baseExtraction, hard_stops: [{ criterion: "Independent organization", status: "fail", source_section: "Opportunity section 3", source_quote: "Departments within universities are excluded", explanation: "The applicant is a department inside a university." }] } });
+  const result = buildAuditResult({ extraction: { ...baseExtraction, hard_stops: [{ criterion: "Independent organization", category: "structure", status: "fail", source_section: "Opportunity section 3", source_quote: "Departments within universities are excluded", explanation: "The applicant is a department inside a university." }] } });
   assert.equal(result.recommendation, "DECLINE");
   assert.match(result.hard_stops[0].source_quote, /excluded/);
 });
@@ -46,4 +46,13 @@ test("workflow 5: filing limitations and missing application volume force visibl
   assert.equal(audit.durability.status, "needs_human_check");
   assert.equal(economics.status, "not_calculable");
   assert.equal(economics.expected_value_per_application, null);
+});
+
+test("workflow 6: an undated deadline and uncloseable competition do not block an otherwise clean case", () => {
+  const extraction = {
+    ...baseExtraction,
+    hard_stops: [{ criterion: "Application deadline", category: "deadline", status: "ambiguous", source_section: "Opportunity section 1", source_quote: "Applications close October 1.", explanation: "No year is stated." }],
+    fit_gaps: [{ gap: "Competition rate", severity: "high", closeable: false, evidence: "Eight awards are available.", next_step: "None" }]
+  };
+  assert.equal(buildAuditResult({ extraction }).recommendation, "PURSUE");
 });

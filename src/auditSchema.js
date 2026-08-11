@@ -14,9 +14,10 @@ export const auditProviderSchema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["criterion", "status", "source_section", "source_quote", "explanation"],
+        required: ["criterion", "category", "status", "source_section", "source_quote", "explanation"],
         properties: {
           criterion: { type: "string", minLength: 1 },
+          category: { type: "string", enum: ["legal_status", "geography", "structure", "budget_threshold", "operating_history", "program_restriction", "deadline"] },
           status: { type: "string", enum: ["pass", "fail", "ambiguous"] },
           source_section: { type: "string", minLength: 1 },
           source_quote: { type: "string", minLength: 1 },
@@ -33,7 +34,7 @@ export const auditProviderSchema = {
         properties: {
           gap: { type: "string", minLength: 1 },
           severity: { type: "string", enum: ["high", "medium", "low"] },
-          closeable: { type: "boolean" },
+          closeable: { const: true },
           evidence: { type: "string", minLength: 1 },
           next_step: { type: "string", minLength: 1 }
         }
