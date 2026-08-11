@@ -3,10 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  assertAuditResult,
-  assertFunderApplicantResult
-} from "../src/auditSchema.js";
+import { assertAuditResult } from "../src/auditSchema.js";
 import {
   HUMAN_CHECK_REASON_CODES,
   createHumanCheckResult
@@ -162,9 +159,8 @@ test("a second schema miss returns a valid terminal human-check result", async (
   assert.equal(calls, 2);
   assert.equal(response.result.reason_code, HUMAN_CHECK_REASON_CODES.SCHEMA_FAILED_AFTER_RETRY);
   assert.match(response.result.last_validation_error, /required decision field/);
-  assert.equal(assertFunderApplicantResult(response.result), response.result);
-  assert.equal("eligibility_bucket" in response.result, false);
-  assert.equal("triage_disposition" in response.result, false);
+  assert.equal(assertAuditResult(response.result), response.result);
+  assert.equal("recommendation" in response.result, false);
 });
 
 test("provider timeout returns human check instead of an HTTP-style error", async () => {
@@ -195,12 +191,12 @@ test("human-check schema forbids judgment placeholders and the frontend renders 
   assert.equal(assertAuditResult(valid), valid);
   assert.throws(
     () => assertAuditResult({ ...valid, score: 0, verdict: null }),
-    /invalid audit JSON/
+    /Invalid audit JSON/
   );
 
   const appSource = fs.readFileSync(path.join(repoRoot, "public", "app.js"), "utf8");
   const styles = fs.readFileSync(path.join(repoRoot, "public", "styles.css"), "utf8");
-  assert.match(appSource, /No judgment produced/);
+  assert.match(appSource, /No automated judgment was produced/);
   assert.match(appSource, /Review removed source text/);
-  assert.match(styles, /\.human-check-panel/);
+  assert.match(styles, /\.decision\.needs/);
 });
