@@ -14,12 +14,13 @@ form.addEventListener("submit", async (event) => {
   statusLine.textContent = "Reading the opportunity and checking the supplied facts.";
   try {
     const response = await fetch("/audit", { method: "POST", body: new FormData(form) });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "The audit could not be completed.");
+    const payload = await readJsonResponse(response);
+    if (!response.ok) throw new Error(payload?.error || blockedRequestMessage(response.status));
+    if (!payload?.result) throw new Error("The analysis service returned an incomplete response. Complete the review manually.");
     render(payload.result, payload.source);
   } catch (error) {
     resultTitle.textContent = "Audit stopped";
-    statusLine.textContent = error.message;
+    statusLine.textContent = friendlyErrorMessage(error);
     results.hidden = false;
     results.innerHTML = `<section class="result-card warning"><h3>What to do</h3><p>Check the required fields and source text, then try again. If the problem continues, complete the review manually.</p></section>`;
   } finally {
@@ -52,6 +53,22 @@ function render(result, source) {
 }
 
 function card(title, body) { return `<section class="result-card"><h3>${title}</h3>${body}</section>`; }
+async function readJsonResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) return null;
+  try { return await response.json(); } catch { return null; }
+}
+function blockedRequestMessage(status) {
+  return status === 403
+    ? "The request was blocked before analysis because an input resembled executable or hostile code. Remove code-like text or complete the review manually."
+    : "The audit service returned an unreadable response. Try once more, then complete the review manually.";
+}
+function friendlyErrorMessage(error) {
+  const message = String(error?.message || "");
+  return /failed to fetch|networkerror|unexpected.*json|json.*position/i.test(message)
+    ? "The request was blocked or the analysis service could not be reached. Remove code-like text, try once more, or complete the review manually."
+    : message || "The audit could not be completed. Complete the review manually.";
+}
 function list(items, mapper) { return `<ul>${items.map((item) => `<li>${mapper(item)}</li>`).join("")}</ul>`; }
 function keyValues(object) {
   return `<dl>${Object.entries(object).map(([key, value]) => `<div><dt>${escapeHtml(key.replaceAll("_", " "))}</dt><dd>${escapeHtml(formatValue(value))}</dd></div>`).join("")}</dl>`;

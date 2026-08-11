@@ -56,3 +56,10 @@ test("Render is an API origin rather than a second public interface", () => {
   assert.match(browser, /https:\/\/grant-fit-auditor\.onrender\.com\/audit/);
   assert.doesNotMatch(browser, /https:\/\/grant-fit-auditor\.onrender\.com\/["'`]/);
 });
+
+test("the canonical browser handles blocked and non-JSON service responses cleanly", () => {
+  const browser = fs.readFileSync(path.join(repoRoot, "wayan-grant-fit-auditor", "app.js"), "utf8");
+  assert.match(browser, /readJsonResponse/);
+  assert.match(browser, /blocked before analysis/);
+  assert.match(browser, /failed to fetch\|networkerror/);
+});
