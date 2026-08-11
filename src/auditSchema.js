@@ -34,7 +34,7 @@ export const auditProviderSchema = {
         properties: {
           gap: { type: "string", minLength: 1 },
           severity: { type: "string", enum: ["high", "medium", "low"] },
-          closeable: { const: true },
+          closeable: { type: "boolean", const: true },
           evidence: { type: "string", minLength: 1 },
           next_step: { type: "string", minLength: 1 }
         }
