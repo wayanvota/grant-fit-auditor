@@ -32,17 +32,27 @@ test("the public interface has one applicant workflow and no vendor labels", () 
   assert.match(html, /Human authority/);
 });
 
-test("both About pages disclose data handling and identify the designer", () => {
-  for (const file of ["public/about.html", "wayan-grant-fit-auditor/about.html"]) {
-    const html = fs.readFileSync(path.join(repoRoot, file), "utf8");
-    assert.match(html, /What happens to what you paste\?/);
-    assert.match(html, /retained for up to 30 days/);
-    assert.match(html, /does not intentionally write pasted text or results to its logs/);
-    assert.match(html, /Designed by Wayan Vota/);
-  }
+test("the canonical Wayan page contains the complete tool and About material", () => {
+  const html = fs.readFileSync(path.join(repoRoot, "wayan-grant-fit-auditor", "index.html"), "utf8");
+  assert.match(html, /id="auditForm"/);
+  assert.match(html, /What happens to what you paste\?/);
+  assert.match(html, /retained for up to 30 days/);
+  assert.match(html, /does not intentionally write pasted text or results to its logs/);
+  assert.match(html, /Designed by Wayan Vota/);
+  assert.match(html, /rel="canonical" href="https:\/\/wayan\.com\/grant-fit-auditor\/"/);
+  assert.doesNotMatch(html, /href="https:\/\/grant-fit-auditor\.onrender\.com/);
 });
 
 test("OpenAI requests disable response application-state storage", () => {
   const source = fs.readFileSync(path.join(repoRoot, "src", "providers", "openai.js"), "utf8");
   assert.match(source, /store:\s*false/);
+});
+
+test("Render is an API origin rather than a second public interface", () => {
+  const server = fs.readFileSync(path.join(repoRoot, "server.js"), "utf8");
+  const browser = fs.readFileSync(path.join(repoRoot, "wayan-grant-fit-auditor", "app.js"), "utf8");
+  assert.doesNotMatch(server, /express\.static/);
+  assert.match(server, /res\.redirect\(301, canonicalWebUrl\)/);
+  assert.match(browser, /https:\/\/grant-fit-auditor\.onrender\.com\/audit/);
+  assert.doesNotMatch(browser, /https:\/\/grant-fit-auditor\.onrender\.com\/["'`]/);
 });

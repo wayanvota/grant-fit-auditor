@@ -15,10 +15,16 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 } });
 const port = process.env.PORT || 3000;
 const host = process.env.HOST || "0.0.0.0";
+const canonicalWebUrl = process.env.CANONICAL_WEB_URL || "https://wayan.com/grant-fit-auditor/";
+const allowedWebOrigins = new Set(["https://wayan.com", "https://www.wayan.com"]);
 
+app.use(apiCors);
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+
+app.get(["/", "/index.html", "/about", "/about.html"], (_req, res) => {
+  res.redirect(301, canonicalWebUrl);
+});
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "grant-fit-auditor", analysisConfigured: Boolean(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY) });
@@ -94,6 +100,27 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
 }
 
 export { app };
+
+function apiCors(req, res, next) {
+  if (req.path !== "/audit") return next();
+  const origin = req.get("origin");
+  if (origin && !allowedWebOrigins.has(origin) && !isLocalDevelopmentOrigin(origin)) {
+    return res.status(403).json({ error: "This API accepts browser requests from the Grant Fit Auditor website only." });
+  }
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+}
+
+function isLocalDevelopmentOrigin(origin) {
+  if (process.env.NODE_ENV === "production") return false;
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+}
 
 function organizationFrom(body) {
   return {

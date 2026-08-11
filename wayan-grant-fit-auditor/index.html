@@ -1,1 +1,97 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grant Fit Auditor</title><meta name="description" content="Decide whether a grant opportunity deserves staff time."><link rel="stylesheet" href="styles.css"></head><body><header><a class="brand" href="index.html">Grant Fit Auditor</a><nav><a aria-current="page" href="index.html">Home</a><a href="https://grant-fit-auditor.onrender.com/">Auditor</a><a href="about.html">About</a></nav></header><main><section class="hero"><p class="label">A working tool for nonprofit grant discipline</p><h1>Decide before proposal momentum takes over.</h1><p class="lede">Grant Fit Auditor checks whether a grant opportunity deserves staff time, using explicit eligibility rules, closeable gaps, filing evidence, application economics, and source timing.</p><div class="actions"><a class="button" href="https://grant-fit-auditor.onrender.com/">Open the auditor</a><a class="button secondary" href="about.html">How it works</a></div></section><section class="grid"><article><p class="label">Hard stops</p><h2>Find disqualifiers first.</h2><p>The result quotes the exact eligibility condition and separates failed requirements from ambiguous ones.</p></article><article><p class="label">Fit and cost</p><h2>See what can be fixed.</h2><p>Material gaps are ranked, while disclosed application volume and award data support transparent staff-time math.</p></article><article><p class="label">Durability</p><h2>Check the funding signal.</h2><p>An optional funder EIN adds filing-backed context and makes missing or unusable evidence visible.</p></article></section><p class="boundary"><strong>Human authority:</strong> staff verify eligibility, source accuracy, organizational evidence, and the final go or no-go choice.</p></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Grant Fit Auditor</title>
+  <meta name="description" content="Decide whether a grant opportunity deserves staff time.">
+  <link rel="canonical" href="https://wayan.com/grant-fit-auditor/">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./">Grant Fit Auditor</a>
+    <nav aria-label="Tool navigation"><a href="#auditor">Auditor</a><a href="#about">About</a></nav>
+    <span class="privacy-note">No account or database</span>
+  </header>
+
+  <main>
+    <section class="hero" id="auditor">
+      <p class="eyebrow">Grant discipline before proposal momentum</p>
+      <h1>Should this opportunity get staff time?</h1>
+      <p class="lede">Check hard eligibility stops, closeable fit gaps, funder durability, application economics, and evidence timing in one review.</p>
+    </section>
+
+    <section class="workspace">
+      <form id="auditForm" class="input-panel">
+        <div class="section-heading"><p class="panel-label">01 / Organization</p><h2>State the facts the call can test.</h2></div>
+        <div class="field-grid">
+          <label class="field wide"><span>Legal name *</span><input name="legalName" required></label>
+          <label class="field"><span>Organization EIN</span><input name="organizationEin" inputmode="numeric" placeholder="12-3456789"></label>
+          <label class="field"><span>Annual budget *</span><input name="annualBudget" type="number" min="0" required></label>
+          <label class="field"><span>501(c)(3) status *</span><select name="is501c3" required><option value="">Select</option><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select></label>
+          <label class="field"><span>States served *</span><input name="states" required placeholder="Michigan, Ohio"></label>
+          <label class="field wide"><span>Program areas *</span><input name="programAreas" required placeholder="Workforce development, maternal health"></label>
+          <label class="field wide"><span>Organization structure *</span><select name="structure" required><option value="standalone">Standalone nonprofit</option><option value="chapter">Local chapter with its own determination letter</option><option value="department">Department or center inside a larger institution</option><option value="fiscal_sponsor">Fiscally sponsored project</option></select></label>
+          <label class="field wide"><span>Relevant capacity and evidence</span><textarea name="ngoProfile" rows="5" placeholder="Describe the program, population, operating history, partnerships, results, and constraints relevant to this opportunity."></textarea></label>
+        </div>
+
+        <div class="section-heading divider"><p class="panel-label">02 / Opportunity</p><h2>Supply the complete call.</h2></div>
+        <label class="field"><span>Guidelines, eligibility criteria, and FAQ</span><textarea name="rfpText" rows="10" placeholder="Paste at least 500 characters."></textarea></label>
+        <div class="field-grid">
+          <label class="field wide"><span>Opportunity URL</span><input name="rfpUrl" type="url" placeholder="https://funder.org/opportunity"></label>
+          <label class="field wide"><span>Or upload a text-based PDF</span><input name="rfpPdf" type="file" accept="application/pdf"></label>
+        </div>
+
+        <div class="section-heading divider"><p class="panel-label">03 / Optional diligence</p><h2>Add filing and labor inputs.</h2></div>
+        <div class="field-grid">
+          <label class="field"><span>Funder legal name</span><input name="funderName"></label>
+          <label class="field"><span>Funder EIN</span><input name="funderEin" inputmode="numeric" placeholder="12-3456789"></label>
+          <label class="field"><span>Official funder domain</span><input name="officialFunderDomain" placeholder="funder.org"></label>
+          <label class="field"><span>Loaded staff cost per hour</span><input name="staffCostPerHour" type="number" min="1" step="1" placeholder="75"></label>
+        </div>
+
+        <button type="submit" class="primary-button" id="submitButton">Run fit audit</button>
+        <p id="progress" class="progress" hidden>Checking the evidence. Keep this tab open.</p>
+        <p class="fine-print">Inputs are processed for this run only. The application stores no profiles or results.</p>
+      </form>
+
+      <section class="output-panel" aria-live="polite">
+        <div class="section-heading"><p class="panel-label">Decision brief</p><h2 id="resultTitle">One recommendation, with evidence.</h2><p id="statusLine">Complete the form to produce a review.</p></div>
+        <div id="results" class="results" hidden></div>
+        <aside class="human-boundary"><p class="panel-label">Human authority</p><p>A staff person must verify eligibility, source accuracy, organizational evidence, and the final go or no-go choice.</p></aside>
+      </section>
+    </section>
+
+    <section class="about-page" id="about">
+      <p class="eyebrow">About the tool</p>
+      <h2>Protect staff time before proposal work begins.</h2>
+      <p class="about-lede">Grant Fit Auditor tests a nonprofit against the explicit terms of an opportunity, separates disqualifiers from fixable gaps, and shows where filing evidence or source confirmation remains incomplete.</p>
+
+      <section class="result-card about-section">
+        <h3>What it does</h3>
+        <p>It reads the supplied opportunity and organization facts, quotes explicit eligibility requirements, identifies failed or ambiguous hard stops, ranks closeable fit gaps, and returns one recommendation: pursue, pause, decline, or needs human check.</p>
+        <p>An optional funder EIN adds a filing-backed durability read. When the call discloses application volume, award count, and award size, the tool also calculates expected value per application and break-even staff hours. It never invents missing volume.</p>
+        <h3>What remains human</h3>
+        <p>Staff must confirm the legal entity, source accuracy, unstated context, organizational evidence, and the final decision. The output supports triage. It does not certify eligibility or replace leadership judgment.</p>
+      </section>
+
+      <section class="result-card about-section" aria-labelledby="data-handling-heading">
+        <p class="eyebrow">Data-handling posture</p>
+        <h3 id="data-handling-heading">What happens to what you paste?</h3>
+        <p>Grant Fit Auditor does not create accounts or write submitted text, organization profiles, or results to a database. For each audit, the application sends the material you provide to OpenAI's API, receives the assessment, and returns it to your browser. The application requests that OpenAI not store the response as application state.</p>
+        <p><a href="https://platform.openai.com/docs/models/default-usage-policies-by-endpoint">OpenAI states that API data is not used to train its models unless the customer explicitly opts in</a>. Under OpenAI's standard API controls, abuse-monitoring logs may contain prompts and responses and are retained for up to 30 days, unless the law requires longer retention. OpenAI offers different controls to eligible, approved customers.</p>
+        <p>This application's code does not intentionally write pasted text or results to its logs. The hosting service may still record ordinary operational metadata, such as request timing, status, and errors. Treat this as an external service. Do not paste anything you would not send to a vendor by email. Summarize unpublished applicant material, personal information, or content covered by a confidentiality obligation.</p>
+      </section>
+
+      <section class="result-card about-section" aria-labelledby="designer-heading">
+        <p class="eyebrow">Designer</p>
+        <h3 id="designer-heading">Designed by Wayan Vota</h3>
+        <p><a href="https://wayan.com/">Wayan Vota</a> designed Grant Fit Auditor as a practical test of grant discipline. He defined the problem, the four recommendation states, the evidence requirements, and the points where automated analysis must stop for human review.</p>
+        <p>Wayan directed the product design, testing, and release. OpenAI Codex was used to implement the application under his direction. The tool's structure and limits reflect his design choices, not a recommendation from the analysis provider.</p>
+      </section>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

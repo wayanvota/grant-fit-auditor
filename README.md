@@ -1,6 +1,6 @@
 # Grant Fit Auditor
 
-Grant Fit Auditor helps a US nonprofit decide whether a grant opportunity deserves staff time. It is a stateless Express application with a browser interface and one `POST /audit` endpoint.
+Grant Fit Auditor helps a US nonprofit decide whether a grant opportunity deserves staff time. The single public interface is `https://wayan.com/grant-fit-auditor/`. A stateless Express service on Render provides the `POST /audit` API but does not serve a second public interface.
 
 ## Decision workflow
 
@@ -19,7 +19,7 @@ The analysis engine extracts cited facts. Deterministic application code applies
 
 ## Data and safety
 
-The service uses no database and stores no submitted profiles or results. User-controlled text is treated as untrusted data, screened for model-control instructions, stripped once, and revalidated. A detected injection, repeated schema failure, timeout, unresolved funder identity, or unusable filing returns a visible human-check state without a fabricated judgment.
+The service uses no database and stores no submitted profiles or results. OpenAI requests set `store: false`. User-controlled text is treated as untrusted data, screened for model-control instructions, stripped once, and revalidated. A detected injection, repeated schema failure, timeout, unresolved funder identity, or unusable filing returns a visible human-check state without a fabricated judgment.
 
 The filing client in `src/irs990.js` calls the public ProPublica Nonprofit Explorer API and requires no key. Provider credentials remain server-side environment variables.
 
@@ -31,8 +31,8 @@ npm test
 npm start
 ```
 
-Set at least one supported analysis credential in the environment. The deployed service uses its existing server-side credential.
+Set at least one supported analysis credential in the environment. The deployed service uses its existing server-side credential. Local browser testing may use an origin such as `http://localhost:4173`; production browser requests are restricted to Wayan.com.
 
 ## Release
 
-GitHub Actions runs the complete test suite plus the repository-wide forbidden-content check. The static Wayan.com package is in `wayan-grant-fit-auditor/`; its `.htaccess` contains the old-path redirect rule.
+GitHub Actions runs the complete test suite plus the repository-wide forbidden-content check. The complete Wayan.com interface is in `wayan-grant-fit-auditor/`. Its `.htaccess` redirects the former separate About page into the About section on the canonical page. Render redirects `/`, `/index.html`, `/about`, and `/about.html` to the Wayan.com interface while retaining `/audit` and `/health` as service endpoints.

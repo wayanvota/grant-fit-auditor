@@ -1,1 +1,2 @@
-Redirect 301 /grant-decider/ /grant-fit-auditor/
+DirectoryIndex index.html
+Redirect 301 /grant-fit-auditor/about.html /grant-fit-auditor/#about

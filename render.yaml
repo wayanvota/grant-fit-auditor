@@ -9,6 +9,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: CANONICAL_WEB_URL
+        value: https://wayan.com/grant-fit-auditor/
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: OPENAI_API_KEY
