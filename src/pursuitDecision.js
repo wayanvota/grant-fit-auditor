@@ -6,10 +6,19 @@ export function buildPursuitResult({
   foundation,
   nonprofit,
   sourceUrls = [],
+  kindoraResearch = null,
   now = new Date()
 }) {
   const allowedUrls = new Set(
-    [...sourceUrls, foundation.website, filingRecord?.sourceUrl, filingRecord?.publicUrl]
+    [
+      ...sourceUrls,
+      ...(kindoraResearch?.source_urls || []),
+      foundation.website,
+      filingRecord?.sourceUrl,
+      filingRecord?.publicUrl,
+      kindoraResearch?.matched_funder?.kindora_url,
+      kindoraResearch?.matched_funder?.website_url
+    ]
       .filter(Boolean)
       .map(normalizeUrl)
       .filter(Boolean)
@@ -17,17 +26,18 @@ export function buildPursuitResult({
   const evidence = dedupeEvidence(extraction.evidence)
     .filter((item) => isAllowedEvidence(item, allowedUrls));
   const evidenceIds = new Set(evidence.map((item) => item.id));
-  const warnings = [...extraction.warnings];
+  const warnings = [...extraction.warnings, ...(kindoraResearch?.warnings || [])];
   if (evidence.length < extraction.evidence.length) {
     warnings.push("One or more claims were withheld because their source URLs were not returned by the research tools.");
   }
 
-  const filingSummary = summarizeFiling(filingRecord);
+  const filingSummary = summarizeFiling(filingRecord, kindoraResearch);
   const identity = resolveIdentity(extraction.identity, filingRecord, foundation, allowedUrls);
-  const hardGates = extraction.hard_gates.map((gate) => ({
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const hardGates = extraction.hard_gates.map((gate) => enforceHardGateEvidence({
     ...gate,
     evidence_ids: gate.evidence_ids.filter((id) => evidenceIds.has(id))
-  }));
+  }, evidenceById, warnings));
   const access = {
     ...extraction.access,
     evidence_ids: extraction.access.evidence_ids.filter((id) => evidenceIds.has(id))
@@ -128,7 +138,8 @@ export function buildPursuitResult({
     missing_evidence: extraction.missing_evidence,
     evidence_ledger: addFilingEvidence(evidence, filingSummary),
     filing_summary: filingSummary,
-    warnings: unique(warnings),
+    kindora_research: presentKindoraResearch(kindoraResearch),
+    warnings: unique(warnings).slice(0, 10),
     human_review: "A nonprofit leader must verify source accuracy, relationship context, strategic fit, and the final pursuit decision."
   };
 }
@@ -166,8 +177,20 @@ function resolveIdentity(identity, filingRecord, foundation, allowedUrls) {
   return result;
 }
 
-function summarizeFiling(record) {
+function summarizeFiling(record, kindoraResearch = null) {
   if (!record) {
+    if (kindoraResearch?.filings?.length && kindoraResearch?.matched_funder) {
+      const years = kindoraResearch.filings.map((item) => item.filing_year).filter(Number.isFinite);
+      return {
+        status: "limited",
+        organization_name: kindoraResearch.matched_funder.legal_name,
+        ein: kindoraResearch.matched_funder.ein,
+        latest_tax_year: years[0] || null,
+        filing_years: years,
+        source_url: kindoraResearch.matched_funder.kindora_url,
+        explanation: "Kindora returned structured filing totals, but the independent filing lookup did not confirm the record."
+      };
+    }
     return {
       status: "not_requested",
       organization_name: null,
@@ -200,7 +223,9 @@ function summarizeFiling(record) {
     latest_tax_year: years[0] || null,
     filing_years: years,
     source_url: record.publicUrl || record.sourceUrl,
-    explanation: "A filing record with extracted financial fields was matched. Grant-level details still require the cited return or schedule."
+    explanation: kindoraResearch?.grants?.length
+      ? `A filing record was matched, and Kindora returned ${kindoraResearch.grants.length} itemized grant records for pattern review.`
+      : "A filing record with extracted financial fields was matched. Grant-level details still require the cited return or schedule."
   };
 }
 
@@ -221,6 +246,48 @@ function addFilingEvidence(evidence, filingSummary) {
     confidence: filingSummary.status === "available" ? "high" : "medium",
     support: filingSummary.explanation
   }, ...evidence].slice(0, 26);
+}
+
+function enforceHardGateEvidence(gate, evidenceById, warnings) {
+  if (gate.status !== "fail") return gate;
+  const hasIndependentSupport = gate.evidence_ids.some((id) => {
+    const item = evidenceById.get(id);
+    return item && ["foundation", "irs", "propublica", "grantee"].includes(item.source_owner);
+  });
+  if (hasIndependentSupport) return gate;
+  warnings.push(`The ${gate.category.replaceAll("_", " ")} gate was changed from fail to unclear because it relied only on provider-derived evidence.`);
+  return {
+    ...gate,
+    status: "unclear",
+    reason: `${gate.reason} The available support is provider-derived and cannot independently trigger a decline.`
+  };
+}
+
+function presentKindoraResearch(value) {
+  const stats = value?.giving_stats || {};
+  return {
+    status: value?.status || "unavailable",
+    retrieved_at: value?.retrieved_at || new Date(0).toISOString(),
+    calls: Math.min(Number(value?.calls) || 0, 6),
+    attribution: "Data from Kindora",
+    attribution_url: "https://www.kindora.co",
+    matched_funder: value?.matched_funder || null,
+    filings: (value?.filings || []).slice(0, 3),
+    grants: (value?.grants || []).slice(0, 20),
+    giving_stats: {
+      total_grants: stats.total_grants ?? null,
+      total_amount: stats.total_amount ?? null,
+      average_grant: stats.average_grant ?? null,
+      median_grant: stats.median_grant ?? null,
+      minimum_grant: stats.minimum_grant ?? null,
+      maximum_grant: stats.maximum_grant ?? null,
+      years: (stats.years || []).slice(0, 5),
+      top_recipient_states: (stats.top_recipient_states || []).slice(0, 8),
+      data_quality: stats.data_quality || null
+    },
+    open_programs: (value?.open_programs || []).slice(0, 5),
+    warnings: unique(value?.warnings || []).slice(0, 10)
+  };
 }
 
 function isAllowedEvidence(item, allowedUrls) {

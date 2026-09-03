@@ -11,6 +11,7 @@ import { HUMAN_CHECK_REASON_CODES, createHumanCheckResult, isHumanCheckResult } 
 import { runPursuitResearch } from "./src/pursuitService.js";
 import { buildPursuitResult } from "./src/pursuitDecision.js";
 import { assertPursuitResult } from "./src/pursuitSchema.js";
+import { fetchKindoraResearch } from "./src/kindora.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,7 +48,8 @@ app.get("/health", (_req, res) => {
     ok: true,
     service: "grant-fit-auditor",
     analysisConfigured: Boolean(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY),
-    pursuitResearchConfigured: Boolean(process.env.OPENAI_API_KEY)
+    pursuitResearchConfigured: Boolean(process.env.OPENAI_API_KEY),
+    kindoraConfigured: process.env.KINDORA_ENABLED !== "false"
   });
 });
 
@@ -117,6 +119,7 @@ export async function handlePursuit(req, res) {
     const request = pursuitRequestFrom(req.body || {});
     await validatePursuitRequest(request);
 
+    const kindoraPromise = fetchKindoraResearch(request.foundation);
     let candidates = [];
     let filingRecord = null;
     try {
@@ -131,14 +134,24 @@ export async function handlePursuit(req, res) {
       // The research call still proceeds. Filing failure remains visible in the final result.
     }
 
+    const kindoraResearch = await kindoraPromise;
+    if (!filingRecord && kindoraResearch.matched_funder?.ein) {
+      try {
+        filingRecord = await fetchIrs990(kindoraResearch.matched_funder.ein);
+      } catch {
+        // The Kindora record still enters the model as provider-derived evidence.
+      }
+    }
+
     const research = await runPursuitResearch({
       foundation: request.foundation,
       nonprofit: request.nonprofit,
       filingContext: filingContext(filingRecord),
-      irsCandidates: candidates
+      irsCandidates: candidates,
+      kindoraContext: kindoraResearch
     });
     if (isHumanCheckResult(research.result)) {
-      return res.json({ result: research.result, research: researchSummary(research, filingRecord) });
+      return res.json({ result: research.result, research: researchSummary(research, filingRecord, kindoraResearch) });
     }
 
     if (!filingRecord && research.result.identity.ein) {
@@ -154,9 +167,10 @@ export async function handlePursuit(req, res) {
       filingRecord,
       foundation: request.foundation,
       nonprofit: request.nonprofit,
-      sourceUrls: research.sourceUrls
+      sourceUrls: [...research.sourceUrls, ...kindoraResearch.source_urls],
+      kindoraResearch
     }));
-    res.json({ result, research: researchSummary(research, filingRecord) });
+    res.json({ result, research: researchSummary(research, filingRecord, kindoraResearch) });
   } catch (error) {
     res.status(error.statusCode || error.status || 500).json({
       error: error.publicMessage || "Foundation research failed. Check the submitted information and try again.",
@@ -350,12 +364,15 @@ function filingContext(record) {
   };
 }
 
-function researchSummary(research, filingRecord) {
+function researchSummary(research, filingRecord, kindoraResearch = null) {
   return {
     provider: research.provider,
     model: research.model || null,
     sourceCount: research.sourceUrls?.length || 0,
     filingMatched: Boolean(filingRecord?.organization),
+    kindoraStatus: kindoraResearch?.status || "not_requested",
+    kindoraCalls: kindoraResearch?.calls || 0,
+    kindoraGrants: kindoraResearch?.grants?.length || 0,
     storage: "none"
   };
 }

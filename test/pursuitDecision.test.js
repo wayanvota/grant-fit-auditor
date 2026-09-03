@@ -127,3 +127,46 @@ test("hours at risk require nonnegative numeric inputs", () => {
   assert.equal(calculateHoursAtRisk({ research_hours: null, cultivation_hours: null, application_hours: null }), null);
   assert.equal(calculateHoursAtRisk({ research_hours: -1, cultivation_hours: 2, application_hours: 3 }), null);
 });
+
+test("Kindora-only evidence cannot independently trigger a decline", () => {
+  const kindoraUrl = "https://www.kindora.co/funders/example-foundation";
+  const providerEvidence = {
+    ...evidence[0],
+    id: "kindora-only",
+    source_url: kindoraUrl,
+    source_title: "Kindora foundation record",
+    source_owner: "kindora",
+    support: "Provider-derived pattern record."
+  };
+  const failed = extraction({
+    evidence: [providerEvidence],
+    hard_gates: extraction().hard_gates.map((gate) => gate.category === "ask_size"
+      ? { ...gate, status: "fail", reason: "Observed grants are below the requested amount.", evidence_ids: ["kindora-only"] }
+      : { ...gate, evidence_ids: ["kindora-only"] }),
+    access: { status: "open", reason: "An application route is published.", evidence_ids: ["kindora-only"] },
+    observed_pattern: { status: "aligned", reason: "Recent grants include comparable work.", evidence_ids: ["kindora-only"] }
+  });
+  const result = buildPursuitResult({
+    extraction: failed,
+    filingRecord: filing(),
+    foundation: foundation(),
+    nonprofit: nonprofit(),
+    sourceUrls: [kindoraUrl],
+    kindoraResearch: {
+      status: "available",
+      retrieved_at: "2026-09-03T12:00:00.000Z",
+      calls: 6,
+      matched_funder: null,
+      filings: [],
+      grants: [],
+      giving_stats: {},
+      open_programs: [],
+      warnings: [],
+      source_urls: [kindoraUrl]
+    }
+  });
+  assert.notEqual(result.recommendation, "DECLINE");
+  assert.equal(result.hard_gates.find((gate) => gate.category === "ask_size").status, "unclear");
+  assert.match(result.warnings.join(" "), /provider-derived/);
+  assertPursuitResult(result);
+});

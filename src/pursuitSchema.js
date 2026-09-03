@@ -17,7 +17,7 @@ const evidenceItem = {
     source_title: { type: "string", minLength: 1, maxLength: 300 },
     source_owner: {
       type: "string",
-      enum: ["foundation", "irs", "propublica", "grantee", "news", "other"]
+      enum: ["foundation", "irs", "propublica", "kindora", "grantee", "news", "other"]
     },
     source_date: nullableString,
     tax_period: nullableString,
@@ -27,6 +27,132 @@ const evidenceItem = {
     },
     confidence: { type: "string", enum: ["high", "medium", "low"] },
     support: { type: "string", minLength: 1, maxLength: 600 }
+  }
+};
+
+const kindoraResearch = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "status", "retrieved_at", "calls", "attribution", "attribution_url",
+    "matched_funder", "filings", "grants", "giving_stats", "open_programs", "warnings"
+  ],
+  properties: {
+    status: { type: "string", enum: ["available", "partial", "ambiguous", "not_found", "unavailable", "disabled"] },
+    retrieved_at: { type: "string", minLength: 10 },
+    calls: { type: "integer", minimum: 0, maximum: 6 },
+    attribution: { type: "string", const: "Data from Kindora" },
+    attribution_url: { type: "string", minLength: 8 },
+    matched_funder: {
+      anyOf: [{
+        type: "object",
+        additionalProperties: false,
+        required: ["legal_name", "ein", "funder_id", "website_url", "kindora_url", "funder_type", "city", "state"],
+        properties: {
+          legal_name: nullableString,
+          ein: nullableString,
+          funder_id: nullableString,
+          website_url: nullableString,
+          kindora_url: nullableString,
+          funder_type: nullableString,
+          city: nullableString,
+          state: nullableString
+        }
+      }, { type: "null" }]
+    },
+    filings: {
+      type: "array",
+      maxItems: 3,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["filing_year", "total_revenue", "total_assets_eoy", "total_grants_paid"],
+        properties: {
+          filing_year: nullableNumber,
+          total_revenue: nullableNumber,
+          total_assets_eoy: nullableNumber,
+          total_grants_paid: nullableNumber
+        }
+      }
+    },
+    grants: {
+      type: "array",
+      maxItems: 20,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "provider_record_id", "source", "recipient_name", "recipient_ein", "recipient_state",
+          "recipient_country", "recipient_ntee_code", "amount", "purpose", "filing_year", "underlying_source_url"
+        ],
+        properties: {
+          provider_record_id: { type: "string", minLength: 1, maxLength: 120 },
+          source: { type: "string", minLength: 1, maxLength: 60 },
+          recipient_name: nullableString,
+          recipient_ein: nullableString,
+          recipient_state: nullableString,
+          recipient_country: nullableString,
+          recipient_ntee_code: nullableString,
+          amount: nullableNumber,
+          purpose: nullableString,
+          filing_year: nullableNumber,
+          underlying_source_url: nullableString
+        }
+      }
+    },
+    giving_stats: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "total_grants", "total_amount", "average_grant", "median_grant", "minimum_grant",
+        "maximum_grant", "years", "top_recipient_states", "data_quality"
+      ],
+      properties: {
+        total_grants: nullableNumber,
+        total_amount: nullableNumber,
+        average_grant: nullableNumber,
+        median_grant: nullableNumber,
+        minimum_grant: nullableNumber,
+        maximum_grant: nullableNumber,
+        years: { type: "array", maxItems: 5, items: { type: "number" } },
+        top_recipient_states: {
+          type: "array",
+          maxItems: 8,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["state", "grant_count", "percentage"],
+            properties: { state: nullableString, grant_count: nullableNumber, percentage: nullableNumber }
+          }
+        },
+        data_quality: { anyOf: [{ type: "object", additionalProperties: true }, { type: "null" }] }
+      }
+    },
+    open_programs: {
+      type: "array",
+      maxItems: 5,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "provider_record_id", "title", "description", "deadline", "grant_size_min", "grant_size_max",
+          "geographic_focus", "accepts_unsolicited", "intake_type", "application_url"
+        ],
+        properties: {
+          provider_record_id: { type: "string", minLength: 1, maxLength: 120 },
+          title: nullableString,
+          description: nullableString,
+          deadline: nullableString,
+          grant_size_min: nullableNumber,
+          grant_size_max: nullableNumber,
+          geographic_focus: { type: "array", maxItems: 8, items: { type: "string" } },
+          accepts_unsolicited: { anyOf: [{ type: "boolean" }, { type: "null" }] },
+          intake_type: nullableString,
+          application_url: nullableString
+        }
+      }
+    },
+    warnings: { type: "array", maxItems: 10, items: { type: "string", minLength: 1, maxLength: 500 } }
   }
 };
 
@@ -123,7 +249,7 @@ export const completedPursuitSchema = {
     "recommendation", "decision_reason", "next_action", "reopen_condition",
     "confidence", "research_cutoff", "hours_at_risk", "cost_at_risk",
     "identity", "hard_gates", "access", "observed_pattern", "counterevidence",
-    "missing_evidence", "evidence_ledger", "filing_summary", "warnings", "human_review"
+    "missing_evidence", "evidence_ledger", "filing_summary", "kindora_research", "warnings", "human_review"
   ],
   properties: {
     recommendation: {
@@ -158,6 +284,7 @@ export const completedPursuitSchema = {
         explanation: { type: "string", minLength: 1 }
       }
     },
+    kindora_research: kindoraResearch,
     warnings: pursuitProviderSchema.properties.warnings,
     human_review: { type: "string", minLength: 1 }
   }

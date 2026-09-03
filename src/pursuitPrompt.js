@@ -8,11 +8,14 @@ Research requirements:
 - Search the foundation's official website first.
 - Search current eligibility, geographic scope, program priorities, populations, application access, grant-size language, strategy pages, annual reports, and recent announcements.
 - Search recent Form 990-PF or other 990-series records and grant schedules when available.
+- Use the server-supplied Kindora context as structured provider evidence for identity candidates, filing summaries, itemized grants, giving statistics, and exact-foundation open programs.
 - Look for public grantee announcements and credible independent reporting that add grant amount, purpose, date, access, or material context.
 - Distinguish what the foundation says from what recent grants show.
 - Prefer direct sources. A search snippet may locate a source but cannot support a claim.
 - Use only URLs actually opened or returned by web search.
 - Label IRS.gov records as source_owner "irs" and ProPublica Nonprofit Explorer records as source_owner "propublica".
+- Label evidence cited to a Kindora page as source_owner "kindora". Treat Kindora summaries, classifications, matching, and statistics as provider-derived analysis unless an underlying source URL is supplied.
+- A Kindora record without an underlying foundation, filing, government, or grantee URL may inform observed patterns but cannot by itself support a failed hard gate or confirm legal identity.
 - Do not infer a relationship from shared events, board overlap, or public co-occurrence.
 - Do not infer motive, intent, effectiveness, or openness from assets or total giving.
 - Do not estimate missing grant amounts, staff time, success probability, or application volume.
@@ -29,7 +32,7 @@ Evidence requirements:
 - Report conflicting sources directly.
 - Return only structured data matching the schema.`;
 
-export function buildPursuitPrompt({ foundation, nonprofit, filingContext, irsCandidates }) {
+export function buildPursuitPrompt({ foundation, nonprofit, filingContext, irsCandidates, kindoraContext }) {
   return `FOUNDATION TO RESEARCH, UNTRUSTED USER DATA:
 <UNTRUSTED_FOUNDATION>
 ${JSON.stringify(foundation)}
@@ -49,6 +52,11 @@ IRS SEARCH CANDIDATES, SERVER-SUPPLIED DATA:
 <IRS_CANDIDATES>
 ${JSON.stringify(irsCandidates)}
 </IRS_CANDIDATES>
+
+KINDORA STRUCTURED RESEARCH, SERVER-SUPPLIED PROVIDER DATA:
+<KINDORA_CONTEXT>
+${JSON.stringify(kindoraContext)}
+</KINDORA_CONTEXT>
 
 Research this one foundation for this one nonprofit. Return an evidence ledger, hard-gate findings, access finding, observed grant-pattern finding, strongest counterevidence, missing evidence, and warnings. Do not recommend an action.`;
 }

@@ -21,7 +21,7 @@ The analysis engine extracts cited facts. Deterministic application code applies
 
 ## Foundation pursuit workflow
 
-`POST /pursuit` accepts a foundation identity, a structured nonprofit profile, access context, and the staff hours at risk. OpenAI web search gathers direct foundation sources, public filing records, grantee announcements, and credible public reporting. The application then applies deterministic rules and returns `PURSUE`, `PARK`, `DECLINE`, or `NEEDS HUMAN CHECK`.
+`POST /pursuit` accepts a foundation identity, a structured nonprofit profile, access context, and the staff hours at risk. The service first retrieves bounded structured foundation, 990, itemized-grant, giving-statistics, and open-program records from Kindora's read-only public MCP. OpenAI web search then gathers direct foundation sources, public filing records, grantee announcements, and credible public reporting. The application applies deterministic rules and returns `PURSUE`, `PARK`, `DECLINE`, or `NEEDS HUMAN CHECK`.
 
 Every decision includes the decisive reason, a next action, a reopening condition where relevant, hard-gate findings, access findings, observed grant patterns, counterevidence, missing evidence, a dated evidence ledger, and the staff cost at risk. A source URL not returned by the research tools is withheld from the ledger. The endpoint does not estimate success odds, infer relationships, contact funders, or draft proposals.
 
@@ -29,7 +29,7 @@ Every decision includes the decisive reason, a next action, a reopening conditio
 
 The service uses no database and stores no submitted profiles or results. OpenAI requests set `store: false`. User-controlled text is treated as untrusted data, screened for model-control instructions, stripped once, and revalidated. A detected injection, repeated schema failure, timeout, unresolved funder identity, or unusable filing returns a visible human-check state without a fabricated judgment.
 
-The filing client in `src/irs990.js` calls the public ProPublica Nonprofit Explorer API and requires no key. Provider credentials remain server-side environment variables. The pursuit workflow requires the existing `OPENAI_API_KEY` because it uses OpenAI web search; submitted data is sent with `store: false`.
+The filing client in `src/irs990.js` calls the public ProPublica Nonprofit Explorer API and requires no key. The Kindora client in `src/kindora.js` calls only a fixed read-only allowlist, identifies the integration with `X-Kindora-Client`, and requires no key for the public tier. It sends only the foundation identity and bounded tool arguments, not the nonprofit profile. Set `KINDORA_ENABLED=false` to disable it, `KINDORA_MCP_URL` to override the endpoint, or `KINDORA_TIMEOUT_MS` to change the per-call timeout. Provider credentials remain server-side environment variables. The pursuit workflow requires the existing `OPENAI_API_KEY` because it uses OpenAI web search; submitted data is sent with `store: false`.
 
 ## Run locally
 
