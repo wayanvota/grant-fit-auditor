@@ -46,6 +46,42 @@ export async function fetchIrs990(ein, { fetchImpl = fetch, baseUrl = DEFAULT_BA
   }
 }
 
+export async function searchIrsOrganizations(
+  query,
+  { fetchImpl = fetch, baseUrl = DEFAULT_BASE_URL, timeoutMs = 12000 } = {}
+) {
+  const normalizedQuery = String(query || "").trim();
+  if (normalizedQuery.length < 2) return [];
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const sourceUrl = `${baseUrl}/search.json?q=${encodeURIComponent(normalizedQuery)}`;
+  try {
+    const response = await fetchImpl(sourceUrl, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal
+    });
+    if (!response.ok) throw new Error(`Foundation search failed with status ${response.status}.`);
+    const payload = await response.json();
+    return (payload?.organizations || []).slice(0, 8).map((organization) => ({
+      ein: String(organization.ein || "").padStart(9, "0"),
+      name: organization.name || null,
+      city: organization.city || null,
+      state: organization.state || null,
+      subsection_code: organization.subseccd ?? null,
+      source_url: sourceUrl
+    }));
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error("The foundation identity search timed out.");
+      timeoutError.code = "IRS_TIMEOUT";
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export function normalizeIrsResponse(ein, payload, sourceUrl = "") {
   const filings = [...(payload?.filings_with_data || [])].filter((item) => item?.tax_prd)
     .sort((a, b) => Number(b.tax_prd) - Number(a.tax_prd));
@@ -58,6 +94,7 @@ export function normalizeIrsResponse(ein, payload, sourceUrl = "") {
     filingsWithoutData,
     latestFiling: filings[0] || null,
     sourceUrl,
+    publicUrl: `https://projects.propublica.org/nonprofits/organizations/${normalizeEin(ein)}`,
     dataSource: "ProPublica Nonprofit Explorer API and IRS annual extracts"
   };
 }

@@ -1,6 +1,8 @@
 # Grant Fit Auditor
 
-Grant Fit Auditor helps a US nonprofit decide whether a grant opportunity deserves staff time. The single public interface is `https://wayan.com/grant-fit-auditor/`. A stateless Express service on Render provides the `POST /audit` API but does not serve a second public interface.
+This service supports two nonprofit-side decisions. Grant Fit Auditor tests a specific opportunity. Funder Pursuit Advisor researches a foundation before staff commit time to prospect research, cultivation, relationship-building, or proposal work.
+
+The public interfaces are `https://wayan.com/grant-fit-auditor/` and `https://wayan.com/grant-decider/`. A stateless Express service on Render provides the `POST /audit` and `POST /pursuit` APIs but does not serve a second public interface.
 
 ## Decision workflow
 
@@ -17,11 +19,17 @@ The evidence page contains, in order:
 
 The analysis engine extracts cited facts. Deterministic application code applies the recommendation rules, calculates filing ratios, performs cost math, and checks dates and domains. Missing application volume is never estimated.
 
+## Foundation pursuit workflow
+
+`POST /pursuit` accepts a foundation identity, a structured nonprofit profile, access context, and the staff hours at risk. OpenAI web search gathers direct foundation sources, public filing records, grantee announcements, and credible public reporting. The application then applies deterministic rules and returns `PURSUE`, `PARK`, `DECLINE`, or `NEEDS HUMAN CHECK`.
+
+Every decision includes the decisive reason, a next action, a reopening condition where relevant, hard-gate findings, access findings, observed grant patterns, counterevidence, missing evidence, a dated evidence ledger, and the staff cost at risk. A source URL not returned by the research tools is withheld from the ledger. The endpoint does not estimate success odds, infer relationships, contact funders, or draft proposals.
+
 ## Data and safety
 
 The service uses no database and stores no submitted profiles or results. OpenAI requests set `store: false`. User-controlled text is treated as untrusted data, screened for model-control instructions, stripped once, and revalidated. A detected injection, repeated schema failure, timeout, unresolved funder identity, or unusable filing returns a visible human-check state without a fabricated judgment.
 
-The filing client in `src/irs990.js` calls the public ProPublica Nonprofit Explorer API and requires no key. Provider credentials remain server-side environment variables.
+The filing client in `src/irs990.js` calls the public ProPublica Nonprofit Explorer API and requires no key. Provider credentials remain server-side environment variables. The pursuit workflow requires the existing `OPENAI_API_KEY` because it uses OpenAI web search; submitted data is sent with `store: false`.
 
 ## Run locally
 
