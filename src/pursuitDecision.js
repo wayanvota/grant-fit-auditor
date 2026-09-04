@@ -282,7 +282,7 @@ function enforceHardGateEvidence(gate, evidenceById, warnings) {
 
 function attachKindoraStatsEvidence(gate, statsEvidence) {
   if (!statsEvidence || gate.category !== "ask_size") return gate;
-  if (!/\b(?:kindora|median|average|typical|observed)\s+(?:grant|giving)|giving statistics\b/i.test(gate.reason)) return gate;
+  if (!/\b(?:kindora|median|average|typical|observed|grant-size distribution|giving statistics)\b/i.test(gate.reason)) return gate;
   return {
     ...gate,
     evidence_ids: unique([...gate.evidence_ids, statsEvidence.id])

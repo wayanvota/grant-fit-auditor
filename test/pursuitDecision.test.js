@@ -214,7 +214,7 @@ test("Kindora grant statistics used by an ask-size gate receive an explicit prov
   const result = buildPursuitResult({
     extraction: extraction({
       hard_gates: extraction().hard_gates.map((gate) => gate.category === "ask_size"
-        ? { ...gate, reason: "Kindora reports a median grant near the proposed request." }
+        ? { ...gate, reason: "The request sits near the observed median/average grant size in aggregated data." }
         : gate)
     }),
     filingRecord: filing(),
