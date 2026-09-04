@@ -208,3 +208,50 @@ test("Kindora-only evidence cannot independently trigger a decline", () => {
   assert.match(result.warnings.join(" "), /provider-derived/);
   assertPursuitResult(result);
 });
+
+test("Kindora grant statistics used by an ask-size gate receive an explicit provider evidence record", () => {
+  const statsUrl = "https://www.kindora.co/funders/example-foundation";
+  const result = buildPursuitResult({
+    extraction: extraction({
+      hard_gates: extraction().hard_gates.map((gate) => gate.category === "ask_size"
+        ? { ...gate, reason: "Kindora reports a median grant near the proposed request." }
+        : gate)
+    }),
+    filingRecord: filing(),
+    foundation: foundation(),
+    nonprofit: nonprofit(),
+    sourceUrls: [officialUrl, statsUrl],
+    kindoraResearch: {
+      status: "available",
+      retrieved_at: "2026-09-03T12:00:00.000Z",
+      calls: 6,
+      attribution_url: "https://www.kindora.co",
+      matched_funder: {
+        legal_name: "Example Foundation", ein: "12-3456789", funder_id: "example",
+        website_url: officialUrl, kindora_url: statsUrl, funder_type: null, city: null, state: null
+      },
+      filings: [], grants: [], open_programs: [], warnings: [], source_urls: [statsUrl],
+      giving_stats: { minimum_grant: 25000, median_grant: 100000, average_grant: 125000, maximum_grant: 500000, years: [2025, 2024] }
+    }
+  });
+  const item = result.evidence_ledger.find((entry) => entry.id === "server-kindora-giving-stats");
+  assert.equal(item.source_owner, "kindora");
+  assert.match(item.support, /provider-derived/);
+  assert.ok(result.hard_gates.find((gate) => gate.category === "ask_size").evidence_ids.includes(item.id));
+  assertPursuitResult(result);
+});
+
+test("counterevidence is withheld when all of its cited sources fail provenance validation", () => {
+  const result = buildPursuitResult({
+    extraction: extraction({
+      evidence: [{ ...evidence[0], source_url: "https://unsupported.example/claim" }],
+      counterevidence: [{ statement: "An unsupported factual concern.", evidence_ids: ["eligibility"] }]
+    }),
+    filingRecord: filing(),
+    foundation: foundation(),
+    nonprofit: nonprofit(),
+    sourceUrls: []
+  });
+  assert.deepEqual(result.counterevidence, []);
+  assert.match(result.warnings.join(" "), /counterevidence statements were withheld/);
+});

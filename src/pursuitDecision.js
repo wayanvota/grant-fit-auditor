@@ -23,8 +23,10 @@ export function buildPursuitResult({
       .map(normalizeUrl)
       .filter(Boolean)
   );
-  const evidence = dedupeEvidence(extraction.evidence)
+  let evidence = dedupeEvidence(extraction.evidence)
     .filter((item) => isAllowedEvidence(item, allowedUrls));
+  const kindoraStats = kindoraStatsEvidence(kindoraResearch);
+  if (kindoraStats) evidence = dedupeEvidence([...evidence, kindoraStats]).slice(0, 25);
   const evidenceIds = new Set(evidence.map((item) => item.id));
   const warnings = [...extraction.warnings, ...(kindoraResearch?.warnings || [])];
   if (evidence.length < extraction.evidence.length) {
@@ -34,10 +36,14 @@ export function buildPursuitResult({
   const filingSummary = summarizeFiling(filingRecord, kindoraResearch);
   const identity = resolveIdentity(extraction.identity, filingRecord, foundation, allowedUrls);
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
-  const hardGates = extraction.hard_gates.map((gate) => enforceHardGateEvidence({
-    ...gate,
-    evidence_ids: gate.evidence_ids.filter((id) => evidenceIds.has(id))
-  }, evidenceById, warnings));
+  const hardGates = extraction.hard_gates.map((gate) => enforceHardGateEvidence(
+    attachKindoraStatsEvidence({
+      ...gate,
+      evidence_ids: gate.evidence_ids.filter((id) => evidenceIds.has(id))
+    }, kindoraStats),
+    evidenceById,
+    warnings
+  ));
   const access = {
     ...extraction.access,
     evidence_ids: extraction.access.evidence_ids.filter((id) => evidenceIds.has(id))
@@ -46,10 +52,14 @@ export function buildPursuitResult({
     ...extraction.observed_pattern,
     evidence_ids: extraction.observed_pattern.evidence_ids.filter((id) => evidenceIds.has(id))
   };
-  const counterevidence = extraction.counterevidence.map((item) => ({
+  const mappedCounterevidence = extraction.counterevidence.map((item) => ({
     ...item,
     evidence_ids: item.evidence_ids.filter((id) => evidenceIds.has(id))
   }));
+  const counterevidence = mappedCounterevidence.filter((item) => item.evidence_ids.length > 0);
+  if (counterevidence.length < mappedCounterevidence.length) {
+    warnings.push("One or more counterevidence statements were withheld because no validated source remained attached.");
+  }
 
   const sourceReady = evidence.some((item) =>
     ["foundation", "irs", "propublica"].includes(item.source_owner) &&
@@ -270,6 +280,42 @@ function enforceHardGateEvidence(gate, evidenceById, warnings) {
   };
 }
 
+function attachKindoraStatsEvidence(gate, statsEvidence) {
+  if (!statsEvidence || gate.category !== "ask_size") return gate;
+  if (!/\b(?:kindora|median|average|typical|observed)\s+(?:grant|giving)|giving statistics\b/i.test(gate.reason)) return gate;
+  return {
+    ...gate,
+    evidence_ids: unique([...gate.evidence_ids, statsEvidence.id])
+  };
+}
+
+function kindoraStatsEvidence(kindoraResearch) {
+  const stats = kindoraResearch?.giving_stats || {};
+  const values = [stats.minimum_grant, stats.median_grant, stats.average_grant, stats.maximum_grant]
+    .filter((value) => Number.isFinite(Number(value)));
+  const sourceUrl = kindoraResearch?.matched_funder?.kindora_url || kindoraResearch?.attribution_url;
+  if (!values.length || !sourceUrl) return null;
+  const parts = [
+    stats.minimum_grant === null || stats.minimum_grant === undefined ? null : `minimum ${formatCurrency(stats.minimum_grant)}`,
+    stats.median_grant === null || stats.median_grant === undefined ? null : `median ${formatCurrency(stats.median_grant)}`,
+    stats.average_grant === null || stats.average_grant === undefined ? null : `average ${formatCurrency(stats.average_grant)}`,
+    stats.maximum_grant === null || stats.maximum_grant === undefined ? null : `maximum ${formatCurrency(stats.maximum_grant)}`
+  ].filter(Boolean);
+  const years = (stats.years || []).filter(Number.isFinite).join(", ");
+  return {
+    id: "server-kindora-giving-stats",
+    claim: `Kindora reports provider-derived grant-size statistics for ${kindoraResearch.matched_funder?.legal_name || "the matched foundation"}.`,
+    source_url: sourceUrl,
+    source_title: "Kindora giving statistics",
+    source_owner: "kindora",
+    source_date: kindoraResearch.retrieved_at || null,
+    tax_period: years || null,
+    evidence_type: "reported_claim",
+    confidence: "medium",
+    support: `${parts.join(", ")}${years ? ` across ${years}` : ""}. These are provider-derived statistics unless an underlying filing link is supplied.`
+  };
+}
+
 function presentKindoraResearch(value) {
   const stats = value?.giving_stats || {};
   return {
@@ -410,6 +456,10 @@ function finiteNonnegative(value) {
 
 function roundMoney(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(value));
 }
 
 function unique(items) {
