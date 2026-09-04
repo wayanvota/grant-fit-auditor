@@ -90,13 +90,40 @@ test("an explicit, sourced geography failure produces a traceable decline", () =
   assertPursuitResult(result);
 });
 
-test("relationship-led access without a path is parked, but a warm path can proceed", () => {
+test("relationship-led access stays parked until a claimed warm path includes a named route", () => {
   const relationshipLed = extraction({
     access: { status: "relationship_led", reason: "The foundation accepts inquiries through known partners.", evidence_ids: ["eligibility"] }
   });
   const base = { extraction: relationshipLed, filingRecord: filing(), foundation: foundation(), sourceUrls: [officialUrl] };
   assert.equal(buildPursuitResult({ ...base, nonprofit: nonprofit() }).recommendation, "PARK");
-  assert.equal(buildPursuitResult({ ...base, nonprofit: nonprofit({ relationship_status: "warm_path" }) }).recommendation, "PURSUE");
+  assert.equal(buildPursuitResult({ ...base, nonprofit: nonprofit({ relationship_status: "warm_path" }) }).recommendation, "PARK");
+  assert.equal(buildPursuitResult({
+    ...base,
+    nonprofit: nonprofit({ relationship_status: "warm_path", known_paths: "Our board chair confirmed an introduction to the program officer." })
+  }).recommendation, "PURSUE");
+});
+
+test("a shared short name cannot confirm a different foundation against the supplied EIN", () => {
+  const fordFiling = normalizeIrsResponse("131684331", {
+    organization: { name: "Ford Foundation" },
+    filings_with_data: [{ tax_prd: 202412, tax_prd_yr: 2024, totrevenue: 10000000 }],
+    filings_without_data: []
+  }, "https://projects.propublica.org/nonprofits/organizations/131684331");
+  const result = buildPursuitResult({
+    extraction: extraction({ identity: {
+      legal_name: "The Ford Family Foundation",
+      ein: "13-1684331",
+      status: "confirmed",
+      explanation: "The submitted record appeared to match.",
+      source_url: officialUrl
+    } }),
+    filingRecord: fordFiling,
+    foundation: { name: "The Ford Family Foundation", ein: "13-1684331", website: officialUrl },
+    nonprofit: nonprofit(),
+    sourceUrls: [officialUrl]
+  });
+  assert.equal(result.recommendation, "NEEDS HUMAN CHECK");
+  assert.notEqual(result.identity.status, "confirmed");
 });
 
 test("a claim with a URL absent from research provenance is withheld", () => {
@@ -126,6 +153,17 @@ test("hours at risk require nonnegative numeric inputs", () => {
   assert.equal(calculateHoursAtRisk(nonprofit()), 46);
   assert.equal(calculateHoursAtRisk({ research_hours: null, cultivation_hours: null, application_hours: null }), null);
   assert.equal(calculateHoursAtRisk({ research_hours: -1, cultivation_hours: 2, application_hours: 3 }), null);
+});
+
+test("an explicitly supplied zero hourly cost remains a zero-dollar cost", () => {
+  const result = buildPursuitResult({
+    extraction: extraction(),
+    filingRecord: filing(),
+    foundation: foundation(),
+    nonprofit: nonprofit({ loaded_hourly_cost: 0 }),
+    sourceUrls: [officialUrl]
+  });
+  assert.equal(result.cost_at_risk, 0);
 });
 
 test("Kindora-only evidence cannot independently trigger a decline", () => {

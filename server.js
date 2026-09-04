@@ -34,7 +34,13 @@ const host = process.env.HOST || "0.0.0.0";
 const canonicalWebUrl = process.env.CANONICAL_WEB_URL || "https://wayan.com/grant-fit-auditor/";
 const allowedWebOrigins = new Set(["https://wayan.com", "https://www.wayan.com"]);
 const pursuitBuckets = new Map();
+const MAX_MONEY_INPUT = 1_000_000_000_000;
+const MAX_HOURS_INPUT = 10_000;
+const MAX_HOURLY_COST = 100_000;
 
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(apiSecurityHeaders);
 app.use(apiCors);
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
@@ -179,7 +185,15 @@ export async function handlePursuit(req, res) {
   }
 }
 
-app.use((error, _req, res, _next) => {
+app.use(handleApiError);
+
+export function handleApiError(error, _req, res, _next) {
+  if (error?.type === "entity.too.large") {
+    return res.status(413).json({ error: "The submitted request is too large. Shorten the text fields and try again." });
+  }
+  if (error?.type === "entity.parse.failed") {
+    return res.status(400).json({ error: "The submitted request was not valid JSON." });
+  }
   if (error?.name === "MulterError") {
     const message = error.code === "LIMIT_FIELD_VALUE"
       ? "A submitted text field was too large. Shorten it and try again."
@@ -187,7 +201,7 @@ app.use((error, _req, res, _next) => {
     return res.status(400).json({ error: message });
   }
   res.status(error.statusCode || 500).json({ error: error.publicMessage || "Request failed." });
-});
+}
 
 if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   app.listen(port, host, () => console.log(`Grant Fit Auditor running on ${host}:${port}`));
@@ -195,7 +209,17 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
 
 export { app };
 
-function apiCors(req, res, next) {
+export function apiSecurityHeaders(req, res, next) {
+  if (["/audit", "/pursuit", "/health"].includes(req.path)) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "no-referrer");
+  }
+  next();
+}
+
+export function apiCors(req, res, next) {
   if (!["/audit", "/pursuit"].includes(req.path)) return next();
   const origin = req.get("origin");
   if (origin && !allowedWebOrigins.has(origin) && !isLocalDevelopmentOrigin(origin)) {
@@ -253,7 +277,7 @@ function preferredProvider() {
   return "anthropic";
 }
 
-function pursuitRequestFrom(body) {
+export function pursuitRequestFrom(body) {
   return {
     foundation: {
       name: cleanText(body.foundationName, 300),
@@ -287,13 +311,19 @@ function pursuitRequestFrom(body) {
   };
 }
 
-async function validatePursuitRequest(request) {
+export async function validatePursuitRequest(request) {
   const { foundation, nonprofit } = request;
   if (!foundation.name || !nonprofit.legal_name || !nonprofit.mission ||
       !nonprofit.program_areas || !nonprofit.geographies || !nonprofit.funding_need ||
       nonprofit.is_501c3 === null || nonprofit.annual_budget === null ||
       nonprofit.ask_min === null || nonprofit.ask_max === null) {
     const error = new Error("Complete the foundation name and required nonprofit strategy fields.");
+    error.statusCode = 400;
+    error.publicMessage = error.message;
+    throw error;
+  }
+  if (foundation.name.length < 2) {
+    const error = new Error("Enter a foundation name with at least two characters.");
     error.statusCode = 400;
     error.publicMessage = error.message;
     throw error;
@@ -306,6 +336,37 @@ async function validatePursuitRequest(request) {
   }
   if (foundation.ein && !/^\d{2}-?\d{7}$/.test(foundation.ein)) {
     const error = new Error("Enter a valid nine-digit foundation EIN.");
+    error.statusCode = 400;
+    error.publicMessage = error.message;
+    throw error;
+  }
+  if (nonprofit.ein && !/^\d{2}-?\d{7}$/.test(nonprofit.ein)) {
+    const error = new Error("Enter a valid nine-digit nonprofit EIN.");
+    error.statusCode = 400;
+    error.publicMessage = error.message;
+    throw error;
+  }
+  if ([nonprofit.ask_min, nonprofit.ask_max, nonprofit.annual_budget].some((value) => value > MAX_MONEY_INPUT)) {
+    const error = new Error("Budget and request amounts must be no more than $1 trillion.");
+    error.statusCode = 400;
+    error.publicMessage = error.message;
+    throw error;
+  }
+  const hourValues = [nonprofit.research_hours, nonprofit.cultivation_hours, nonprofit.application_hours];
+  if (hourValues.some((value) => value === null)) {
+    const error = new Error("Enter research, cultivation, and application hours so staff time is not understated.");
+    error.statusCode = 400;
+    error.publicMessage = error.message;
+    throw error;
+  }
+  if (hourValues.some((value) => value > MAX_HOURS_INPUT) || nonprofit.loaded_hourly_cost > MAX_HOURLY_COST) {
+    const error = new Error("Staff hours or hourly cost exceed the supported range.");
+    error.statusCode = 400;
+    error.publicMessage = error.message;
+    throw error;
+  }
+  if (["warm_path", "current_funder"].includes(nonprofit.relationship_status) && nonprofit.known_paths.length < 10) {
+    const error = new Error("Describe the confirmed relationship path before marking it as warm or current.");
     error.statusCode = 400;
     error.publicMessage = error.message;
     throw error;
@@ -377,7 +438,7 @@ function researchSummary(research, filingRecord, kindoraResearch = null) {
   };
 }
 
-function pursuitRateLimit(req, res, next) {
+export function pursuitRateLimit(req, res, next) {
   const now = Date.now();
   if (pursuitBuckets.size > 500) {
     for (const [bucketKey, value] of pursuitBuckets) {

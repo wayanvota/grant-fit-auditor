@@ -61,7 +61,8 @@ export function buildPursuitResult({
   const unclearLegalGate = hardGates.find((gate) =>
     gate.status === "unclear" && ["legal_status", "entity_type"].includes(gate.category)
   );
-  const hasRelationshipPath = ["warm_path", "current_funder"].includes(nonprofit.relationship_status);
+  const hasRelationshipPath = ["warm_path", "current_funder"].includes(nonprofit.relationship_status) &&
+    String(nonprofit.known_paths || "").trim().length >= 10;
 
   let recommendation;
   let decisionReason;
@@ -116,7 +117,7 @@ export function buildPursuitResult({
   }
 
   const hoursAtRisk = calculateHoursAtRisk(nonprofit);
-  const costAtRisk = hoursAtRisk !== null && finitePositive(nonprofit.loaded_hourly_cost)
+  const costAtRisk = hoursAtRisk !== null && finiteNonnegative(nonprofit.loaded_hourly_cost)
     ? roundMoney(hoursAtRisk * Number(nonprofit.loaded_hourly_cost))
     : null;
   const confidence = decisionConfidence({ recommendation, evidence, warnings, identity });
@@ -158,15 +159,21 @@ export function calculateHoursAtRisk(nonprofit) {
 
 function resolveIdentity(identity, filingRecord, foundation, allowedUrls) {
   const result = { ...identity };
-  if (filingRecord?.organization && namesCompatible(
-    filingRecord.organization.name,
-    foundation.name || identity.legal_name
-  )) {
+  if (filingRecord?.organization) {
+    if (namesCompatible(filingRecord.organization.name, foundation.name || identity.legal_name)) {
+      return {
+        legal_name: filingRecord.organization.name || identity.legal_name,
+        ein: filingRecord.ein,
+        status: "confirmed",
+        explanation: "The supplied or researched EIN matches the organization returned by the filing source.",
+        source_url: filingRecord.publicUrl || filingRecord.sourceUrl
+      };
+    }
     return {
-      legal_name: filingRecord.organization.name || identity.legal_name,
-      ein: filingRecord.ein,
-      status: "confirmed",
-      explanation: "The supplied or researched EIN matches the organization returned by the filing source.",
+      legal_name: identity.legal_name || foundation.name,
+      ein: identity.ein || foundation.ein || null,
+      status: "ambiguous",
+      explanation: `The submitted foundation name does not safely match ${filingRecord.organization.name}, the legal entity returned for the filing EIN.`,
       source_url: filingRecord.publicUrl || filingRecord.sourceUrl
     };
   }
@@ -315,11 +322,12 @@ function namesCompatible(left, right) {
   const a = normalizedName(left);
   const b = normalizedName(right);
   if (!a || !b) return false;
-  if (a === b || a.includes(b) || b.includes(a)) return true;
+  if (a === b) return true;
   const leftTokens = new Set(a.split(" "));
   const rightTokens = new Set(b.split(" "));
+  if (Math.min(leftTokens.size, rightTokens.size) < 2) return false;
   const overlap = [...leftTokens].filter((token) => rightTokens.has(token)).length;
-  return overlap / Math.max(leftTokens.size, rightTokens.size) >= 0.6;
+  return overlap / Math.max(leftTokens.size, rightTokens.size) >= 0.8;
 }
 
 function normalizedName(value) {
@@ -392,6 +400,12 @@ function decisionConfidence({ recommendation, evidence, warnings, identity }) {
 function finitePositive(value) {
   const number = Number(value);
   return Number.isFinite(number) && number > 0;
+}
+
+function finiteNonnegative(value) {
+  if (value === "" || value === null || value === undefined) return false;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0;
 }
 
 function roundMoney(value) {
