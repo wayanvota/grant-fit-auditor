@@ -84,6 +84,35 @@ test("credentialed and active-content URL schemes are rejected", async () => {
   }
 });
 
+test("a warm relationship claim without a named route is rejected", async () => {
+  await assert.rejects(
+    () => validatePursuitRequest(pursuitRequestFrom(validBody({ relationshipStatus: "warm_path", knownPaths: "" }))),
+    /Describe the confirmed relationship path/
+  );
+  await validatePursuitRequest(pursuitRequestFrom(validBody({
+    relationshipStatus: "warm_path",
+    knownPaths: "Our board chair confirmed an introduction to the program officer."
+  })));
+});
+
+test("missing staff-time categories cannot silently understate the pursuit cost", async () => {
+  await assert.rejects(
+    () => validatePursuitRequest(pursuitRequestFrom(validBody({ cultivationHours: "" }))),
+    /staff time is not understated/
+  );
+});
+
+test("malformed nonprofit identity and extreme numeric inputs are rejected", async () => {
+  await assert.rejects(
+    () => validatePursuitRequest(pursuitRequestFrom(validBody({ organizationEin: "123-not-an-ein" }))),
+    /valid nine-digit nonprofit EIN/
+  );
+  await assert.rejects(
+    () => validatePursuitRequest(pursuitRequestFrom(validBody({ annualBudget: "1000000000001" }))),
+    /no more than \$1 trillion/
+  );
+});
+
 test("plain-language prompt injection stops before any AI call", async () => {
   const result = await runPursuitResearch({
     foundation: { name: "Example Foundation" },
