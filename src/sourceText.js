@@ -1,5 +1,7 @@
 import pdf from "pdf-parse";
 import { lookup } from "node:dns/promises";
+import http from "node:http";
+import https from "node:https";
 import { isIP } from "node:net";
 import { cleanHtmlToText } from "./cleanHtml.js";
 
@@ -30,7 +32,7 @@ export async function extractSourceText({ pastedText, url, pdfFile }) {
   }
 
   if (urlInput) {
-    const { response, finalUrl } = await fetchPublicSource(urlInput);
+    const { response, body, finalUrl } = await fetchPublicSource(urlInput);
 
     if (!response.ok) {
       const error = new Error(`URL fetch failed with ${response.status}`);
@@ -39,8 +41,7 @@ export async function extractSourceText({ pastedText, url, pdfFile }) {
       throw error;
     }
 
-    const contentType = response.headers.get("content-type") || "";
-    const body = await readBoundedBody(response);
+    const contentType = String(response.headers["content-type"] || "");
 
     if (contentType.includes("application/pdf") || finalUrl.toLowerCase().endsWith(".pdf")) {
       const parsed = await parsePdf(body, "The linked PDF could not be read. Paste the text or upload a valid text-based PDF instead.");
@@ -75,64 +76,91 @@ export async function extractSourceText({ pastedText, url, pdfFile }) {
 }
 
 export async function assertPublicHttpUrl(rawUrl, dnsLookup = lookup) {
+  return (await resolvePublicHttpUrl(rawUrl, dnsLookup)).url;
+}
+
+async function resolvePublicHttpUrl(rawUrl, dnsLookup = lookup) {
   let parsed;
   try { parsed = new URL(rawUrl); } catch { throw publicUrlError("The opportunity URL is invalid."); }
   if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
     throw publicUrlError("Enter a public HTTP or HTTPS URL without embedded credentials.");
   }
-  const hostname = parsed.hostname.toLowerCase().replace(/\.$/, "");
+  const hostname = parsed.hostname.toLowerCase().replace(/\.$/, "").replace(/^\[|\]$/g, "");
   if (!hostname || hostname === "localhost" || /\.(?:localhost|local|internal|home|lan)$/.test(hostname)) {
     throw publicUrlError("Enter a public HTTP or HTTPS URL.");
   }
   if (isIP(hostname)) {
     if (!isPublicAddress(hostname)) throw publicUrlError("Private and local network URLs are not accepted.");
-    return parsed;
+    return { url: parsed, addresses: [{ address: hostname, family: isIP(hostname) }] };
   }
   let addresses;
   try { addresses = await dnsLookup(hostname, { all: true, verbatim: true }); } catch { throw publicUrlError("The opportunity URL hostname could not be resolved."); }
   if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) {
     throw publicUrlError("The opportunity URL resolved to a private or local network address.");
   }
-  return parsed;
+  return { url: parsed, addresses };
 }
 
-async function fetchPublicSource(rawUrl) {
-  let current = await assertPublicHttpUrl(rawUrl);
+export async function fetchPublicSource(rawUrl, { dnsLookup = lookup, request = requestPinned } = {}) {
+  let current = rawUrl;
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
-    const response = await fetch(current, {
-      redirect: "manual",
-      signal: AbortSignal.timeout(30000),
-      headers: { "user-agent": "GrantFitAuditor/1.0 (+https://wayan.com/)" }
-    });
+    const resolved = await resolvePublicHttpUrl(current, dnsLookup);
+    const { response, body } = await request(resolved);
     if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
+      const location = response.headers.location;
       if (!location) throw publicUrlError("The opportunity URL returned an incomplete redirect.");
-      current = await assertPublicHttpUrl(new URL(location, current).toString());
+      current = new URL(location, resolved.url).toString();
       continue;
     }
-    return { response, finalUrl: current.toString() };
+    return { response, body, finalUrl: resolved.url.toString() };
   }
   throw publicUrlError("The opportunity URL redirected too many times.");
 }
 
-async function readBoundedBody(response) {
-  const declared = Number(response.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > MAX_REMOTE_BYTES) throw publicUrlError("The linked opportunity file is too large to process.");
-  const chunks = [];
-  let total = 0;
-  const reader = response.body?.getReader();
-  if (!reader) return Buffer.alloc(0);
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_REMOTE_BYTES) {
-      await reader.cancel();
-      throw publicUrlError("The linked opportunity file is too large to process.");
-    }
-    chunks.push(Buffer.from(value));
-  }
-  return Buffer.concat(chunks);
+function requestPinned({ url, addresses }) {
+  const transport = url.protocol === "https:" ? https : http;
+  return new Promise((resolve, reject) => {
+    const request = transport.request(url, {
+      method: "GET",
+      headers: { "user-agent": "GrantFitAuditor/1.0 (+https://wayan.com/)" },
+      lookup(_hostname, options, callback) {
+        const family = Number(options?.family) || 0;
+        const eligible = family ? addresses.filter((item) => item.family === family) : addresses;
+        if (!eligible.length) return callback(new Error("No validated address matched the requested family."));
+        if (options?.all) return callback(null, eligible);
+        return callback(null, eligible[0].address, eligible[0].family);
+      }
+    }, (response) => {
+      const declared = Number(response.headers["content-length"]);
+      if (Number.isFinite(declared) && declared > MAX_REMOTE_BYTES) {
+        response.destroy();
+        reject(publicUrlError("The linked opportunity file is too large to process."));
+        return;
+      }
+      const chunks = [];
+      let total = 0;
+      response.on("data", (chunk) => {
+        total += chunk.length;
+        if (total > MAX_REMOTE_BYTES) {
+          response.destroy(publicUrlError("The linked opportunity file is too large to process."));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      response.on("end", () => resolve({
+        response: {
+          ok: response.statusCode >= 200 && response.statusCode < 300,
+          status: response.statusCode || 0,
+          headers: response.headers
+        },
+        body: Buffer.concat(chunks)
+      }));
+      response.on("error", reject);
+    });
+    request.setTimeout(30000, () => request.destroy(publicUrlError("The opportunity URL timed out.")));
+    request.on("error", reject);
+    request.end();
+  });
 }
 
 async function parsePdf(buffer, publicMessage) {
@@ -154,18 +182,20 @@ function publicUrlError(message) {
 function isPublicAddress(address) {
   const version = isIP(address);
   if (version === 4) {
-    const [a, b] = address.split(".").map(Number);
+    const [a, b, c] = address.split(".").map(Number);
     return !(a === 0 || a === 10 || a === 127 || a >= 224 ||
       (a === 100 && b >= 64 && b <= 127) ||
       (a === 169 && b === 254) ||
       (a === 172 && b >= 16 && b <= 31) ||
       (a === 192 && b === 168) ||
-      (a === 198 && (b === 18 || b === 19)));
+      (a === 192 && b === 0 && (c === 0 || c === 2)) ||
+      (a === 198 && (b === 18 || b === 19 || (b === 51 && c === 100))) ||
+      (a === 203 && b === 0 && c === 113));
   }
   if (version === 6) {
     const normalized = address.toLowerCase();
     if (normalized.startsWith("::ffff:")) return isPublicAddress(normalized.slice(7));
-    return /^[23][0-9a-f]{3}:/.test(normalized);
+    return /^[23][0-9a-f]{3}:/.test(normalized) && !normalized.startsWith("2001:db8:");
   }
   return false;
 }
@@ -183,7 +213,9 @@ function trimSource(source) {
 function normalizeText(text) {
   return text
     .replace(/\f/g, "\n")
-    .replace(/[ \t]+\n/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+$/u, ""))
+    .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
