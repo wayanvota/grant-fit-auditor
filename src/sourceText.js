@@ -119,16 +119,20 @@ export async function fetchPublicSource(rawUrl, { dnsLookup = lookup, request = 
 
 function requestPinned({ url, addresses }) {
   const transport = url.protocol === "https:" ? https : http;
+  const port = url.port || (url.protocol === "https:" ? 443 : 80);
+  const path = `${url.pathname || "/"}${url.search}`;
+  const hostname = addresses[0].address;
   return new Promise((resolve, reject) => {
-    const request = transport.request(url, {
+    const request = transport.request({
+      protocol: url.protocol,
+      hostname,
+      port,
+      path,
+      servername: url.hostname,
       method: "GET",
-      headers: { "user-agent": "GrantFitAuditor/1.0 (+https://wayan.com/)" },
-      lookup(_hostname, options, callback) {
-        const family = Number(options?.family) || 0;
-        const eligible = family ? addresses.filter((item) => item.family === family) : addresses;
-        if (!eligible.length) return callback(new Error("No validated address matched the requested family."));
-        if (options?.all) return callback(null, eligible);
-        return callback(null, eligible[0].address, eligible[0].family);
+      headers: {
+        host: url.host,
+        "user-agent": "GrantFitAuditor/1.0 (+https://wayan.com/)"
       }
     }, (response) => {
       const declared = Number(response.headers["content-length"]);
@@ -211,12 +215,22 @@ function trimSource(source) {
 }
 
 function normalizeText(text) {
-  return text
+  const normalizedLines = text
     .replace(/\f/g, "\n")
     .split("\n")
-    .map((line) => line.replace(/[ \t]+$/u, ""))
+    .map((line) => line.trimEnd())
     .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/[ \t]{2,}/g, " ")
-    .trim();
+    .replace(/\n{3,}/g, "\n\n");
+  let result = "";
+  let inHorizontalSpace = false;
+  for (const character of normalizedLines) {
+    if (character === " " || character === "\t") {
+      if (!inHorizontalSpace) result += " ";
+      inHorizontalSpace = true;
+    } else {
+      result += character;
+      inHorizontalSpace = false;
+    }
+  }
+  return result.trim();
 }
