@@ -68,3 +68,11 @@ AUDIT_API_BASE=http://127.0.0.1:4192 PUBLIC_SITE_URL=http://127.0.0.1:4192/ LIVE
 
 No live credential is required or read by the deterministic suite or GitHub
 Actions workflow.
+
+## Pull-request security repair
+
+The pull-request CodeQL gate identified polynomial regular-expression risk in
+trailing-whitespace normalization on user-controlled opportunity text. The
+normalizer now trims spaces and tabs with a bounded character loop and collapses
+blank lines without the flagged expression. The performance regression case,
+all 70 repository tests, and all 20 E2E categories passed after the change.
