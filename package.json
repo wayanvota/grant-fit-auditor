@@ -22,7 +22,7 @@
     "cheerio": "^1.0.0",
     "express": "^5.2.1",
     "multer": "^2.0.2",
-    "openai": "^5.12.2",
+    "openai": "^7.12.1",
     "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
