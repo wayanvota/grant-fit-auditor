@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "playwright test",
+    "test:ci": "npm run check && npm run test:e2e",
+    "test:live:openai": "node scripts/liveReliabilitySuite.mjs",
     "check:forbidden": "node --test test/publicationFirewall.test.js",
     "check": "npm run check:forbidden && npm test"
   },
@@ -21,5 +24,8 @@
     "multer": "^2.0.2",
     "openai": "^5.12.2",
     "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
   }
 }

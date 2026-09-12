@@ -41,6 +41,24 @@ npm start
 
 Set at least one supported analysis credential in the environment. The deployed service uses its existing server-side credential. Local browser testing may use an origin such as `http://localhost:4173`; production browser requests are restricted to Wayan.com.
 
+## End-to-end tests
+
+The Playwright harness covers exactly 10 user-behavior and 10 adversarial
+categories. It serves the production browser files, uses the production decision
+and safeguard modules for deterministic UI results, and mounts the real Express
+application for API-boundary tests. It does not call external services.
+
+```bash
+npm ci
+npx playwright install chromium
+npm run test:ci
+```
+
+See `E2E-TEST-REPORT.md` for the category ledger and verification record. The
+optional live OpenAI smoke uses `LIVE_TEST_FILTER="clean eligible" npm run
+test:live:openai` against a separately started local server. It is excluded from
+CI and requires an explicitly supplied local `OPENAI_API_KEY`.
+
 ## Release
 
 GitHub Actions runs the complete test suite plus the repository-wide forbidden-content check. The complete Wayan.com interface is in `wayan-grant-fit-auditor/`. Its `.htaccess` redirects the former separate About page into the About section on the canonical page. Render redirects `/`, `/index.html`, `/about`, and `/about.html` to the Wayan.com interface while retaining `/audit` and `/health` as service endpoints.
