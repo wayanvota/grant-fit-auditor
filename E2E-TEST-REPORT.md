@@ -48,7 +48,7 @@ Status: passed locally on 2026-09-11 with Node 22.16.0.
 - Deterministic E2E categories: 20 passed, exactly U01-U10 and A01-A10
 - High-severity dependency audit: 0 vulnerabilities at all severities
 - Optional OpenAI smoke using the authorized local key: 1 clean eligible case passed
-- GitHub Actions: pending after branch push
+- GitHub Actions: [initial branch run passed in 43 seconds](https://github.com/wayanvota/grant-fit-auditor/actions/runs/34662487782)
 
 Reproduce with:
 
