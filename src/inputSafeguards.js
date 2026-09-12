@@ -43,7 +43,7 @@ export function inspectAndStripInjection(text, { source }) {
   for (const span of [...spans].reverse()) {
     cleaned = `${cleaned.slice(0, span.start)}${cleaned.slice(span.end)}`;
   }
-  cleaned = cleaned.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  cleaned = normalizeWhitespace(cleaned);
 
   const strippedSpans = spans.map(({ start, end }) => ({
     source,
@@ -63,6 +63,20 @@ export function inspectAndStripInjection(text, { source }) {
   ];
 
   return { text: cleaned, strippedSpans, operationLog };
+}
+
+function normalizeWhitespace(text) {
+  const normalized = [];
+  for (const sourceLine of String(text).split("\n")) {
+    let end = sourceLine.length;
+    while (end > 0 && (sourceLine[end - 1] === " " || sourceLine[end - 1] === "\t")) {
+      end -= 1;
+    }
+    const line = sourceLine.slice(0, end);
+    if (line === "" && normalized.at(-1) === "") continue;
+    normalized.push(line);
+  }
+  return normalized.join("\n").trim();
 }
 
 export function containsInjection(text) {
