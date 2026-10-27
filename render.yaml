@@ -3,7 +3,7 @@ services:
     name: grant-fit-auditor
     env: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     autoDeploy: true
     envVars:
